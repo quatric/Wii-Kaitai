@@ -10,7 +10,7 @@ This merges two collections that had drifted apart:
 * [WiiLink24/Kaitais](https://github.com/WiiLink24/Kaitais) — v3 channel variants, Terebi
   no Tomo, WC24 mail, Wii Fit Plus
 
-57 definitions, all of which parse.
+58 definitions, all of which parse.
 
 ## Layout
 
