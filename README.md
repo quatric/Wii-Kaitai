@@ -10,7 +10,7 @@ This merges two collections that had drifted apart:
 * [WiiLink24/Kaitais](https://github.com/WiiLink24/Kaitais) — v3 channel variants, Terebi
   no Tomo, WC24 mail, Wii Fit Plus
 
-55 definitions, all of which parse.
+57 definitions, all of which parse.
 
 ## Layout
 
@@ -18,8 +18,8 @@ This merges two collections that had drifted apart:
 channels/
   check_mii_out/     CMOC .ces list files + the shared list header
   everybody_votes/   voting.bin, first_data.bin, VotesCh.dat
-  forecast/          forecast.bin, short.bin
-  news/              news.bin
+  forecast/          forecast.bin, short.bin, savedata.dat
+  news/              news.bin, savedata.dat
   nintendo/          dllist, .info (soft), thumbnail, dstrial — v6 and v3
   terebi_no_tomo/    Japanese TV guide: header, EPG, strings
 system/              NAND, WC24 (download/friend/mail/send/recv), ticket + TMD,
@@ -97,6 +97,23 @@ tags, not record types**, and the binary carries their membership predicates:
 `isXC` accepts `XC`/`PC`/`RC`/`CC`, `isXM` accepts `XM`/`PM`/`IM`/`CM`, and `isXX`
 accepts the union plus `XX`. Do not write them into a file.
 
+### `forecast/forecast_savedata.ksy`, `news/news_savedata.ksy` — new
+
+Both channels' complete save files, at `.../data/noerase/savedata.dat`. They share one
+32-byte container — a four-byte label (`HAF0` / `HAG0`), a payload, and a trailing CRC-32
+over everything before it (standard reflected CRC-32, poly `0xEDB88320`, init `0xFFFFFFFF`,
+final inversion). Both definitions carry the validator addresses and Nintendo's own two
+failure strings, `NAND data broken.` and `NAND data invalid label.`
+
+Two things a generator has to get right, both recorded in the `doc:` blocks:
+
+* The trailing reserved bytes (8 in Forecast, 12 in News) are never read *and never
+  written* — the save routine fills only the payload and the trailer, so on a first save
+  they hold whatever the allocator left. The CRC covers them, so write zeros.
+* News's `text_speed` at `0x0C` is **not bounds-checked**. The `0..=6` test in that loader
+  applies to `news_language` at `0x08`, not to this field, so a value outside `0..7` reads
+  a float past the end of an eight-entry table — reachable with an otherwise valid save.
+
 ### `check_mii_out/conresult.ksy` — new
 
 The `conresult.cgi` response body. Worth a definition of its own because it is the one
@@ -139,6 +156,11 @@ Contracts a generator has to satisfy, now in `doc:` blocks instead of being folk
   console and given live accessors, populated by nobody. Entry format unknown.
 * **The CMOC `ER` tag** (`0x4552`) — has a getter, is referenced by no category predicate,
   and no payload has been observed.
+* **`forecast/locations.ksy` `location_zoom_1` / `location_zoom_2`** — which is the near
+  and which the far zoom level is untraced.
+* **The `u4` at `+0x0C` of the Forecast long-forecast entry** — per-city, small values with
+  `0xFF` throughout the Japanese files
+  ([ForecastChannel #5](https://github.com/WiiLink24/ForecastChannel/issues/5)). Untraced.
 * **The `unknown` `u4` at `+0x04` of every CMOC sub-record header.** Read by the display
   code; nothing found that branches on it.
 

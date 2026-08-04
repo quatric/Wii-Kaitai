@@ -75,11 +75,15 @@ seq:
   - id: shop_points
     type: u4
     doc: Null if none. 
-  - id: display_capabilities
+  - id: supports_widescreen
     type: u1
-    repeat: expr
-    repeat-expr: 3
-    doc: Display capabilities (16:9 / 480p / audio).
+    doc: 16:9 display support.
+  - id: supports_progressive
+    type: u1
+    doc: 480p / progressive-scan support.
+  - id: supports_surround
+    type: u1
+    doc: Enhanced audio (surround) support.
   - id: max_players
     type: u1
   - id: wii_remote_flag
