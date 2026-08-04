@@ -21,6 +21,17 @@ doc: |
   Byte 0x02 is zero in most files; the FD (first/boot) file uses it as a
   service-discontinued flag.
 
+  Three of the list_tag values are category tags rather than record types. The console
+  carries membership predicates for them:
+
+    XC (0x5843) "any artisan record" -> XC, PC, RC, CC     (isXC at 0x80079E08)
+    XM (0x584D) "any Mii record"     -> XM, PM, IM, CM     (isXM at 0x80079CFC)
+    XX (0x5858) "any record"         -> XX, plus all of XM and XC  (isXX at 0x80079C90)
+
+  Call sites test the category, not the concrete tag, which is how one display path
+  handles Grab Bag, contest and ranking entries alike. A parser should never expect to
+  read XC/XM/XX out of a file.
+
   Files carrying this header are wrapped in the "MC" container: 2-byte magic "MC",
   a u2 version (both 0x0000 and 0x0001 appear as accepted literals in retail content),
   a 20-byte HMAC-SHA1 over the ciphertext, then AES-128-CBC over LZ10-compressed data.
@@ -95,3 +106,7 @@ enums:
     0x4e53: ns_name_search
     0x5352: sr_search
     0x4c4c: ll_select_list
+    0x4552: er_error
+    0x5843: xc_any_artisan
+    0x584d: xm_any_mii
+    0x5858: xx_any_record

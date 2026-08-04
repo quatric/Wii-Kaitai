@@ -10,7 +10,7 @@ This merges two collections that had drifted apart:
 * [WiiLink24/Kaitais](https://github.com/WiiLink24/Kaitais) — v3 channel variants, Terebi
   no Tomo, WC24 mail, Wii Fit Plus
 
-54 definitions, all of which parse.
+55 definitions, all of which parse.
 
 ## Layout
 
@@ -46,11 +46,11 @@ big-endian `binary.Write` — their structs are byte-exact wire layouts, so a Go
 computes to *N* bytes and a console that rejects anything smaller than *N* are two
 independent measurements of the same number.
 
-## Corrections made during the merge
+## Notes on specific definitions
 
 ### `nintendo/ninch_dllist.ksy` — the header is `0x5EA` bytes, not `0x95`
 
-The previous doc comment claimed a `0x95`-byte header. The console's validator
+A `0x95`-byte header is often documented here. The console's validator
 (`0x80035F60`) requires every table offset to be `>= 0x5EA`, which is the parser stating
 where the header ends; real catalogs put the first table at exactly `0x5EA`.
 
@@ -61,11 +61,17 @@ it applies byte-for-byte identical code to all sixteen, at `0x25, 0x2D, 0x35, 0x
 (`0x65`, `0x75`, `0x7D`, `0x8D`) are validated but populated by no known generator — they
 are directory slots, not padding.
 
-The `videos_1` field name was also changed to `videos`, because "videos_1" next to
-`recent_recommendations` invited exactly the mix-up documented below.
+A second, independent witness sits right after the validator: the accessor constructor at
+`0x80036380` takes sixteen `addi rN, r4, <disp>` at the same sixteen displacements, with no
+conditionals, and writes them out as sixteen `{slot_ptr, file_base}` pairs at `accessor+8i`.
+Slots 9, 11, 12 and 14 get live accessors built for them exactly like the eight populated
+ones — they are directory slots, not padding, and their entry format is simply unsampled.
 
-> Third-party documentation that placed a `videos1` table at `0x85`/`0x89` was wrong; the
-> `.ksy` had it right as `recent_recommendations`. The arithmetic settles it without
+The `videos_1` field name is `videos` here, because "videos_1" next to
+`recent_recommendations` invites exactly the mix-up documented below.
+
+> Documentation that places a `videos1` table at `0x85`/`0x89` is wrong; this definition
+> has it right as `recent_recommendations`. The arithmetic settles it without
 > needing the binary: in a real 1,598,720-byte catalog that slot has count 1,320 at offset
 > `0x164324`, which at the 234-byte video stride would end 169,140 bytes past EOF. At the
 > 6-byte recommendation stride it fits.
@@ -78,11 +84,24 @@ field is big-endian and country codes fit in a byte, the split happened to land
 `country_code` on the correct byte while hiding the structure. Byte `0x02`, previously
 undifferentiated padding, is the service-discontinued flag.
 
-### `check_mii_out/cmoc_header.ksy` — new
+### `check_mii_out/cmoc_header.ksy`
 
-The 0x20-byte header shared by every CMOC list file, the sub-record header, and the
-complete 28-entry tag enum. The three existing CMOC files each described this block
-differently; rather than silently editing all three, this documents the reconciliation.
+The 0x20-byte header shared by every CMOC list file, the sub-record header, and the full
+tag enum. Three separate CMOC definitions each described this block differently; rather
+than silently editing all three, this documents the reconciliation.
+
+The enum includes four tags that appear in no published table — `ER` (`0x4552`),
+`XC` (`0x5843`), `XM` (`0x584D`) and `XX` (`0x5858`) — recovered by sweeping the retail
+binary for the `li r3, <tag>; blr` getter pattern. **`XC`, `XM` and `XX` are category
+tags, not record types**, and the binary carries their membership predicates:
+`isXC` accepts `XC`/`PC`/`RC`/`CC`, `isXM` accepts `XM`/`PM`/`IM`/`CM`, and `isXX`
+accepts the union plus `XX`. Do not write them into a file.
+
+### `check_mii_out/conresult.ksy` — new
+
+The `conresult.cgi` response body. Worth a definition of its own because it is the one
+CMOC payload that is served raw: no "MC" container, no AES, no LZ10, no signature — just
+a bare array of 0x60-byte records with no file header.
 
 ## Constraints newly recorded
 
@@ -114,9 +133,12 @@ Contracts a generator has to satisfy, now in `doc:` blocks instead of being folk
 * **CMOC `RC` (extended artisan) tail, `0x5C`–`0x5F`.** One reading has a `u2` country
   code at `0x5C` with padding at `0x5E`; another has an "arrow direction" byte at `0x5D`
   and a `u1` country code at `0x5E`. Only the first closes correctly against the embedded
-  `RK` record at `0x60`. Needs a real `popcrafts_list.ces`.
+  `RK` record at `0x60`. The `RC` call sites in the binary are request builders
+  (`0x8006F3FC`), not layout parsers, so this needs a real `popcrafts_list.ces`.
 * **`dllist` slots 9, 11, 12, 14** (`0x65`, `0x75`, `0x7D`, `0x8D`) — validated by the
-  console, populated by nobody. Contents unknown.
+  console and given live accessors, populated by nobody. Entry format unknown.
+* **The CMOC `ER` tag** (`0x4552`) — has a getter, is referenced by no category predicate,
+  and no payload has been observed.
 * **The `unknown` `u4` at `+0x04` of every CMOC sub-record header.** Read by the display
   code; nothing found that branches on it.
 
@@ -127,9 +149,16 @@ Original work by the [RiiConnect24](https://github.com/RiiConnect24) and
 kept intact here; corrections are limited to the items above and are described rather than
 applied silently.
 
+Merge and corrections by [quatric](https://github.com/quatric).
+
+General questions or comments can be sent to
+[quatricsoftware@gmail.com](mailto:quatricsoftware@gmail.com). No support is provided.
+
 Companion reverse-engineering write-ups for the channels these describe:
 [Forecast](https://gist.github.com/quatric/23267cf80416303da28ef186551a88df) ·
 [News](https://gist.github.com/quatric/e571ed2400339867bf9d52701e59db24) ·
 [Everybody Votes](https://gist.github.com/quatric/0b852dbe7f4921eed685cdd2ec3bf021) ·
 [Check Mii Out](https://gist.github.com/quatric/a54c689066e97770488a880e5e355329) ·
 [Nintendo Channel](https://gist.github.com/quatric/d8bb5b80c1a7fb0db9f845a4926aaa75)
+
+Copyright (c) 2026 quatric
