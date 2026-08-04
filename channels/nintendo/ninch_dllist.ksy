@@ -423,13 +423,13 @@ types:
         type: b5
       - id: online
         type: b1
-        enum: yes_no
+        doc: Set when the title has online play.
       - id: video_flag
         type: b1
-        enum: yes_no
+        doc: Set when the title has an associated video.
       - id: multiplayer
         type: b1
-        enum: yes_no
+        doc: Set when the title supports more than one player.
       - id: unknown_18
         type: u1
         repeat: expr
@@ -594,7 +594,7 @@ types:
         type: u4
       - id: bar_color
         type: u1
-        doc: 0 for grey, 1 for blue, 8 for red
+        enum: bar_color
       - id: unknown_2
         type: u1
         repeat: expr
@@ -664,9 +664,10 @@ enums:
     2: silver
     3: gold
     4: platinum
-  yes_no:
-    0: yes
-    1: no
+  bar_color:
+    0: grey
+    1: blue
+    8: red
   platforms:
     0: none
     1: wii
