@@ -10,7 +10,7 @@ This merges two collections that had drifted apart:
 * [WiiLink24/Kaitais](https://github.com/WiiLink24/Kaitais) — v3 channel variants, Terebi
   no Tomo, WC24 mail, Wii Fit Plus
 
-58 definitions, all of which parse.
+57 definitions, all of which parse.
 
 ## Layout
 
@@ -156,11 +156,13 @@ Contracts a generator has to satisfy, now in `doc:` blocks instead of being folk
   console and given live accessors, populated by nobody. Entry format unknown.
 * **The CMOC `ER` tag** (`0x4552`) — has a getter, is referenced by no category predicate,
   and no payload has been observed.
-* **`forecast/locations.ksy` `location_zoom_1` / `location_zoom_2`** — which is the near
-  and which the far zoom level is untraced.
-* **The `u4` at `+0x0C` of the Forecast long-forecast entry** — per-city, small values with
-  `0xFF` throughout the Japanese files
-  ([ForecastChannel #5](https://github.com/WiiLink24/ForecastChannel/issues/5)). Untraced.
+* **Forecast `location_zoom_2`** (`+0x15` of a Places entry) — bounds-checked to `<= 3` and
+  then read by nothing. `location_zoom_1` is resolved (a 0..9 prominence rank; see
+  `forecast_file.ksy`), but this one has no consumer in the client at all.
+* **What the Forecast `attribute` byte at `+0x0C` of the long and summary entries *means*.**
+  Its type, range and validators are now pinned (`u8`, `<= 5` or `0xFF`, rejects the file),
+  but nothing in this title reads it, so its semantics have to come from whatever does
+  ([ForecastChannel #5](https://github.com/WiiLink24/ForecastChannel/issues/5)).
 * **The `unknown` `u4` at `+0x04` of every CMOC sub-record header.** Read by the display
   code; nothing found that branches on it.
 

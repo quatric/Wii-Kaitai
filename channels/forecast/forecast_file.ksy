@@ -148,11 +148,27 @@ types:
       - id: global_timestamp
         type: u4
         doc: Timestamp is minutes since 2000.
-      - id: unknown
-        type: u4
+      - id: attribute
+        type: u1
         doc: |
-          Only the first byte is examined by the Forecast Channel.
-          Constraint: first byte ≤ 5, or exactly 0xFF. Validated but never read.
+          Validated at 0x8000CB00 as `<= 5, or exactly 0xFF`; anything else
+          rejects the entire file. Read with `lbz` - it is ONE BYTE, not the u32
+          that generators commonly declare here.
+
+          Never read anywhere else in the binary, which is why changing it has
+          no visible effect on the forecast the channel draws. Its consumer is
+          outside this title. 0xFF is the format's usual "not applicable"
+          sentinel and is what Nintendo's Japanese files carry throughout.
+
+          The identical field with the identical rule exists at +0x0C of the
+          summary (WeatherSummary) entry - see that type's `attribute`.
+      - id: attribute_reserved
+        size: 3
+        doc: |
+          Not read by any code path. Note the consequence of the byte split: a
+          generator that declares 0x0C-0x0F as one big-endian u32 and assigns it
+          a small value writes that value into 0x0F, leaving the byte the console
+          actually checks at 0x0C as zero.
       - id: today_forecast
         type: u2
       - id: today_6_hour_forecast_12am_6am
@@ -398,8 +414,14 @@ types:
       - id: global_timestamp
         type: u4
         doc: Timestamp is minutes since 2000.
-      - id: unknown_1
-        type: u4
+      - id: attribute
+        type: u1
+        doc: |
+          Same field and same rule as the long-forecast entry's `attribute`:
+          validated at 0x8000CBE8 as `<= 5, or exactly 0xFF`, one byte, read
+          nowhere else.
+      - id: attribute_reserved
+        size: 3
       - id: today_forecast
         type: u2
       - id: today_6_hour_forecast_12am_6am
@@ -574,8 +596,31 @@ types:
         type: u2
       - id: location_zoom_1
         type: u1
+        doc: |
+          Marker prominence rank, 0 (least prominent) to 9. Validated as <= 9 at
+          0x8000CFFC; a larger value rejects the whole file.
+
+          This is the only one of the two zoom fields the channel consumes. The
+          globe scene buckets every city by this value into an array of ten
+          linked-list heads at scene+0x3C..+0x60 (0x8001A4C8: `lbz r0, 0x280(r4)`
+          then `slwi r0, r0, 2`, indexing scene+0x3C). The currently selected
+          city bypasses the buckets entirely and goes in its own slot at
+          scene+0x64, immediately after the ten.
+
+          Direction: HIGHER is more prominent. The visibility predicate at
+          0x8001AE10 compares two cities' ranks and returns "visible" only when
+          the candidate's rank is the greater one; and the selected city is
+          forced to 9, the maximum, at 0x800076FC. A rank of 9 therefore means
+          "always shown", 0 means "shown last".
       - id: location_zoom_2
         type: u1
+        doc: |
+          Validated as <= 3 at 0x8000D00C - a different and much smaller range
+          than location_zoom_1, which is the reliable way to tell the two apart.
+
+          No consumer for this field was found anywhere in the retail binary;
+          only the bounds check reads it. WiiLink's generator pins it to 3, its
+          maximum, for all 4,272 cities it emits.
       - id: unknown
         type: u2
 enums:
