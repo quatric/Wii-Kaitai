@@ -51,7 +51,7 @@ seq:
       this field and console_language from the same register, so a save written
       there always has them equal. The loader nonetheless treats console_language
       as the guard and this as the value it installs.
-  - id: text_speed
+  - id: text_zoom
     type: u4
     doc: |
       Index into a table of eight floats at 0x801922D0:
