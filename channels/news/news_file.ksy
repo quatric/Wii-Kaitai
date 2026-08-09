@@ -140,6 +140,13 @@ types:
         type: u4
       - id: timestamps_number
         type: u4
+        doc: |
+          Not a count of new articles - a running history. WiiLink24's generator
+          keeps a per-hour on-disk cache and, when building this table, replays
+          every cached article from the past 24 hours (skipping only the hour
+          currently being generated) into this topic's timestamp list. A topic
+          that got zero new articles this hour still carries entries for
+          everything it held over the last day.
       - id: timestamps_offset
         type: u4
     instances:
@@ -155,10 +162,19 @@ types:
         type: timestamps
         repeat: expr
         repeat-expr: timestamps_number
+        doc: |
+          Sorted newest-first by `updated_timestamp` (that's the whole point of
+          carrying 24 hours of history here: the client can just walk the list
+          top to bottom). This is NOT how "is this article new" gets decided -
+          that's a separate step upstream, where the generator diffs each
+          freshly fetched article's title against the titles already sitting in
+          its hourly cache before ever writing this table. Nothing in this file
+          records which articles are new; only their obtain time and rank order.
   timestamps:
     seq:
       - id: updated_timestamp
         type: u4
+        doc: Time the article was obtained/cached - not when it was published (see `articles_table`'s `published_time`/`updated_time` for that).
       - id: article_number
         type: u4
   articles_table:
