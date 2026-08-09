@@ -10,7 +10,7 @@ This merges two collections that had drifted apart:
 * [WiiLink24/Kaitais](https://github.com/WiiLink24/Kaitais) — v3 channel variants, Terebi
   no Tomo, WC24 mail, Wii Fit Plus
 
-57 definitions, all of which parse.
+59 definitions, all of which parse.
 
 ## Layout
 
@@ -24,7 +24,8 @@ channels/
   terebi_no_tomo/    Japanese TV guide: header, EPG, strings
 system/              NAND, WC24 (download/friend/mail/send/recv), ticket + TMD,
                      Mii, SYSCONF, Wii Shop, play record, DHCP, IPL save
-games/               Mario Kart Wii, My Pokémon Ranch, Wii Fit Plus, room.xml.bin
+games/               Mario Kart Wii, My Pokémon Ranch, Wii Fit Plus, room.xml.bin,
+                     Animal Crossing City Folk DLC items (.bitm)
 media/               Mobiclip — Wii, DS, .mods, .moflex, .vx
 ```
 
@@ -120,6 +121,21 @@ The `conresult.cgi` response body. Worth a definition of its own because it is t
 CMOC payload that is served raw: no "MC" container, no AES, no LZ10, no signature — just
 a bare array of 0x60-byte records with no file header.
 
+### `games/accf_dlc_bitm.ksy` — new, and a different kind of source
+
+Every other definition here traces back to a retail binary or a console-side validator.
+This one doesn't: Animal Crossing City Folk's DLC items were never dumped from a retail
+source, so this documents the `.bitm` format as read and written by ACDLC, the community
+item editor/creator. The tool's build directory ships no `acdlc.py` — only a PyInstaller
+app — so the layout came from extracting its bundled `bitm.py` module out of the frozen
+app's PYZ archive and reading the Python 3.10 bytecode directly (no matching decompiler
+was available for that bytecode version). Every offset, the nybble-packed flag block, the
+one-hot `furniture_genre_1`/`furniture_genre_2` encoding, and the non-zero CRC-32 seed
+were then cross-checked by round-tripping a real `.bitm` built with the tool's own
+extracted `pack()` through the compiled `.ksy` — all fields matched byte-for-byte except
+the fixed-width name strings, where Kaitai (correctly) keeps the trailing NUL padding that
+ACDLC strips at the application layer.
+
 ## Constraints newly recorded
 
 Contracts a generator has to satisfy, now in `doc:` blocks instead of being folklore:
@@ -161,7 +177,11 @@ Contracts a generator has to satisfy, now in `doc:` blocks instead of being folk
   `forecast_file.ksy`), but this one has no consumer in the client at all.
 * **What the Forecast `attribute` byte at `+0x0C` of the long and summary entries *means*.**
   Its type, range and validators are now pinned (`u8`, `<= 5` or `0xFF`, rejects the file),
-  but nothing in this title reads it, so its semantics have to come from whatever does
+  but nothing in this title reads it, so its semantics have to come from whatever does. A
+  retail file gives it 1 for most cities, 5 for a few (Evansville, Gary, Bowling Green, El
+  Paso), 4 for a few others (Brasília, Nuuk, Palikir), and 0xFF throughout on Japanese
+  versions; a time-zone-ID theory (Nuuk sits in its own zone despite Denmark's country
+  code) is unconfirmed
   ([ForecastChannel #5](https://github.com/WiiLink24/ForecastChannel/issues/5)).
 * **The `unknown` `u4` at `+0x04` of every CMOC sub-record header.** Read by the display
   code; nothing found that branches on it.

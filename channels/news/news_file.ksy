@@ -21,14 +21,6 @@ meta:
     The console holds 24 of these files - one per hour - and revalidates the whole set
     on every pass, so a single bad hour takes all of them down.
 
-    Retail binary error codes (abs value of status code):
-      000001: NANDDelete() failed while recreating the WC24 virtual file.
-      000002: Catch-all default of the NWC24-errno mapper.
-      000003: WC24 virtual-file I/O failure (VFReadFile/VFOpenFile/VFCloseFile/VFUnmountDrive).
-      000005: NWC24GetDlTask() returned -13, URL mismatch, or VFMountDriveNANDFlash() failed.
-      000006: Error state entered with no server message and no identifiable cause.
-      000099: CXIsFinishedUncompLZ() returned false — payload truncated/corrupt.
-
 seq:
   - id: version
     type: u4
@@ -448,12 +440,26 @@ enums:
     5: anp
     6: ansa
   source_position:
-    1: top_left_corner
-    2: top_left_corner
-    3: right_side_under_headline
-    4: right_side_under_headline
-    5: right_side_under_headline
-    6: left_side_under_headline
+    1:
+      id: top_left_corner
+    2:
+      id: top_left_corner_2
+      doc: |
+        Same on-screen position as value 1. Kaitai enum members need distinct
+        generated identifiers; the original definition gave values 1 and 2 the
+        identical name, and nothing here says two of the six known sources
+        (`source_logo` 1-6) can't share a rendering position. This only
+        disambiguates the identifier - it isn't a claim of a different position.
+    3:
+      id: right_side_under_headline
+    4:
+      id: right_side_under_headline_2
+      doc: Same on-screen position as value 3 - see the note on value 2 above.
+    5:
+      id: right_side_under_headline_3
+      doc: Same on-screen position as value 3 - see the note on value 2 above.
+    6:
+      id: left_side_under_headline
   version:
     0: v1
     512: v2

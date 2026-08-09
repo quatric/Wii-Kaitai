@@ -26,14 +26,6 @@ meta:
     Laundry and pollen indices are only validated when the console's region word
     (r13-0x6A04) is zero, i.e. on Japanese consoles.
 
-    Retail binary error codes (abs value of status code):
-      000001: NANDDelete() failed while recreating the WC24 virtual file.
-      000002: Catch-all default of the NWC24-errno mapper.
-      000003: WC24 virtual-file I/O failure (VFReadFile/VFOpenFile/VFCloseFile/VFUnmountDrive).
-      000005: NWC24GetDlTask() returned -13, URL mismatch, or VFMountDriveNANDFlash() failed.
-      000006: Error state entered with no server message and no identifiable cause.
-      000099: CXIsFinishedUncompLZ() returned false — payload truncated/corrupt.
-
 seq:
   - id: version
     type: u4
@@ -162,6 +154,17 @@ types:
 
           The identical field with the identical rule exists at +0x0C of the
           summary (WeatherSummary) entry - see that type's `attribute`.
+
+          Values seen in Nintendo's own retail file
+          ([ForecastChannel #5](https://github.com/WiiLink24/ForecastChannel/issues/5)):
+          1 for most cities, 5 for a handful (Evansville, Gary, Bowling Green,
+          El Paso), 4 for a few others (Brasília, Nuuk, Palikir), and the
+          Japan-wide 0xFF sentinel on Japanese versions. A later comment on that
+          issue guesses it tracks time zone - Nuuk is grouped under Denmark's
+          country code but sits in its own zone - which would explain why it
+          never mattered to this title: the client displays whatever
+          local/global timestamps the entry already carries and never derives a
+          zone from this byte.
       - id: attribute_reserved
         size: 3
         doc: |
