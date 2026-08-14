@@ -10,7 +10,7 @@ This merges two collections that had drifted apart:
 * [WiiLink24/Kaitais](https://github.com/WiiLink24/Kaitais) — v3 channel variants, Terebi
   no Tomo, WC24 mail, Wii Fit Plus
 
-68 definitions, all of which parse.
+72 definitions, all of which parse.
 
 ## Layout
 
@@ -30,6 +30,8 @@ media/               Mobiclip — Wii, DS, .mods, .moflex, .vx
 nw4r/                NintendoWare for Revolution — the BRRES archive and its
                      MDL0/TEX0/PLT0 members, BRLYT layouts, BRLAN layout
                      animation, BRFNT bitmap fonts
+nw4c/                the 3DS/Wii U generation — SARC archives, BFLYT layouts,
+                     BFLAN layout animation, BFLIM images
 ```
 
 ## Verifying against a real console
@@ -260,3 +262,45 @@ One more, less dangerous but easy to trip over: **BRFNT offsets are absolute
 file offsets that point at section bodies, not at section tags.** `FINF`'s
 `ofs_tglp` reads 56 on a font whose `TGLP` section starts at 48. The same
 eight-byte skew applies to the `CWDH` and `CMAP` chains.
+
+### `nw4c/` — the 3DS and Wii U generation
+
+Same approach as `nw4r/`: compiled, run over a real corpus, and asserted
+against something that would have caught a misreading. The corpus is the
+twenty layout archives shipped inside Swapdoodle, and the definitions chain —
+`sarc.ksy` unpacks the archives, and the 1866 files it yields are what the
+other three were checked against.
+
+| Definition | Corpus | Cross-check that had to hold |
+|---|---|---|
+| `sarc.ksy` | 20 archives, 1866 members | every member's path hash recomputed from its name and matched |
+| `bflyt.ksy` | 299 layouts | 2209 material names clean ASCII; text offsets inside their sections |
+| `bflan.ksy` | 900 animations | 19457 curves and 54622 keys, every key list the length its curve declares |
+| `bflim.ksy` | 667 images | `len_data * 8` equals padded width × height × the format's bit depth |
+
+The field widths grew from the Wii formats and nothing in the files announces
+them, so each was measured rather than assumed: a BFLYT pane name is 24 bytes,
+a material name 28, a group name 34, and a group's pane references 24 each; a
+BFLAN animation entry's name is 28 and its `pat1` group names sit on a 36-byte
+stride. The material width is a good example of how these were settled —
+across 2209 materials, reading the field as 32 bytes fails on 455 of them
+while 28 holds for all.
+
+**A BFLIM's header is at the end of the file.** Image data starts at offset 0
+and a fixed 40-byte `FLIM`+`imag` trailer follows it, so a BFLIM begins with
+whatever its first texels happen to be and cannot be identified by its leading
+bytes. That trailer is also what makes the format enum verifiable rather than
+inherited: 3DS textures are padded to power-of-two dimensions, so dividing
+`len_data` by the padded pixel count yields the bit depth directly, and it
+comes out exact for all eleven formats present.
+
+**Kaitai note, for anyone extending these.** Two compiler behaviours cost real
+time here, both in the Python target. A type whose endianness is computed from
+an expression has *every* positional instance compiled behind a test on the
+very flag being decided, so a byte-order mark read as an instance of the same
+type cannot drive it — `sarc.ksy` reads the mark in a plain outer type and
+passes the answer down as a parameter, and nests everything that must follow
+that order inside the parameterised type, since a sibling type would silently
+inherit the file default instead. Separately, `_index` used inside an
+`instances` `pos:` expression miscompiles into an unbound loop variable; the
+fix is a one-field `*_ref` type that holds the offset and resolves it.
