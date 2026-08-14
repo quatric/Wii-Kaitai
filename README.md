@@ -10,7 +10,7 @@ This merges two collections that had drifted apart:
 * [WiiLink24/Kaitais](https://github.com/WiiLink24/Kaitais) — v3 channel variants, Terebi
   no Tomo, WC24 mail, Wii Fit Plus
 
-60 definitions, all of which parse.
+68 definitions, all of which parse.
 
 ## Layout
 
@@ -27,6 +27,9 @@ system/              NAND, WC24 (download/friend/mail/send/recv), ticket + TMD,
 games/               Mario Kart Wii, My Pokémon Ranch, Wii Fit Plus, room.xml.bin,
                      Animal Crossing City Folk DLC items (.bitm), Swapdoodle BPK1 notes
 media/               Mobiclip — Wii, DS, .mods, .moflex, .vx
+nw4r/                NintendoWare for Revolution — the BRRES archive and its
+                     MDL0/TEX0/PLT0 members, BRLYT layouts, BRLAN layout
+                     animation, BRFNT bitmap fonts
 ```
 
 ## Verifying against a real console
@@ -206,3 +209,54 @@ Companion reverse-engineering write-ups for the channels these describe:
 [Nintendo Channel](https://gist.github.com/quatric/d8bb5b80c1a7fb0db9f845a4926aaa75)
 
 Copyright (c) 2026 quatric
+
+### `nw4r/` — checked against a retail disc, not a wiki
+
+Every definition in `nw4r/` was compiled and run over the full contents of an
+Animal Crossing: City Folk disc, and each carries assertions that would have
+caught a plausible misreading rather than just "it parsed":
+
+| Definition | Corpus | Cross-check that had to hold |
+|---|---|---|
+| `brres.ksy` | 4625 archives | `num_sections` equals the walked sub-file count plus one |
+| `mdl0.ksy` | 7864 models | every model, bone, object and material name resolves in the string pool |
+| `tex0.ksy` | 12368 textures | `len_file - ofs_data` matches the mipmap chain the format fields imply |
+| `plt0.ksy` | 7095 palettes | `len_file` equals `ofs_data + num_entries * 2` exactly |
+| `brlyt.ksy` | 250 layouts | `ofs_text + len_text` stays inside the section for all 547 text boxes |
+| `brlan.ksy` | 1303 animations | 24748 curves and 48418 keyframes, every key list the length its curve declares |
+| `brfnt.ksy` | 11 fonts | 491 sheets each exactly `len_sheet` bytes; all three CMAP encodings exercised |
+
+Four things in these formats are quietly destructive to get wrong, in the sense
+that the file still parses and simply yields the wrong answer.
+
+**MDL0's section table is 13 entries at version 10, not 14.** It is 11 at
+versions 8 and 9, 13 at version 10, and 14 at version 11. Getting the count
+wrong does not break the section lookups — those are indexed — but it moves
+`ofs_name` and the properties block, so the model silently loses its name and
+reports a garbage bounding box. Version 10 is rare enough to hide this:
+exactly one model out of 7864 on the disc uses it, and that one model is how
+the error surfaced.
+
+**BRLYT uses two different offset bases in the same file.** `txl1` and `fnl1`
+name offsets are relative to the start of their entry table, twelve bytes into
+the section; `mat1` and `txt1` offsets are relative to the start of the section
+including its tag. Both were pinned down by locating the strings independently
+and subtracting.
+
+**A BRLYT `txt1` stores the reserved length before the used one.** A layout
+holding a 34-character Japanese message writes 362 then 68. Reading them the
+other way round asks for 362 bytes out of a section with 68 left, which is a
+crash rather than a silent error — but only for text that does not fill its
+buffer, so an all-ASCII test set never trips it.
+
+**A BRRES folder does not have to contain BRRES sub-files.** Retail archives
+carry an `External` folder holding whole foreign files — a `.brseq` sequence
+and a `.bfs` whose first bytes are `01 b3 00 00`. `brres.ksy` therefore names
+the sub-file types it will parse instead of applying a catch-all, and leaves
+anything else as raw bytes; inventing a magic, a size and a version out of a
+`.bfs`'s first sixteen bytes is worse than not parsing it.
+
+One more, less dangerous but easy to trip over: **BRFNT offsets are absolute
+file offsets that point at section bodies, not at section tags.** `FINF`'s
+`ofs_tglp` reads 56 on a font whose `TGLP` section starts at 48. The same
+eight-byte skew applies to the `CWDH` and `CMAP` chains.
