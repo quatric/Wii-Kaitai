@@ -10,7 +10,7 @@ This merges two collections that had drifted apart:
 * [WiiLink24/Kaitais](https://github.com/WiiLink24/Kaitais) — v3 channel variants, Terebi
   no Tomo, WC24 mail, Wii Fit Plus
 
-72 definitions, all of which parse.
+73 definitions, all of which parse.
 
 ## Layout
 
@@ -31,7 +31,8 @@ nw4r/                NintendoWare for Revolution — the BRRES archive and its
                      MDL0/TEX0/PLT0 members, BRLYT layouts, BRLAN layout
                      animation, BRFNT bitmap fonts
 nw4c/                the 3DS/Wii U generation — SARC archives, BFLYT layouts,
-                     BFLAN layout animation, BFLIM images
+                     BFLAN layout animation, BFLIM images, BCH model
+                     containers
 ```
 
 ## Verifying against a real console
@@ -277,6 +278,7 @@ other three were checked against.
 | `bflyt.ksy` | 299 layouts | 2209 material names clean ASCII; text offsets inside their sections |
 | `bflan.ksy` | 900 animations | 19457 curves and 54622 keys, every key list the length its curve declares |
 | `bflim.ksy` | 667 images | `len_data * 8` equals padded width × height × the format's bit depth |
+| `bch.ksy` | 3 containers | relocation table ends exactly at EOF; all 209 dictionary names resolve in the string table |
 
 The field widths grew from the Wii formats and nothing in the files announces
 them, so each was measured rather than assumed: a BFLYT pane name is 24 bytes,
@@ -304,3 +306,30 @@ that order inside the parameterised type, since a sibling type would silently
 inherit the file default instead. Separately, `_index` used inside an
 `instances` `pos:` expression miscompiles into an unbound loop variable; the
 fix is a one-field `*_ref` type that holds the offset and resolves it.
+
+**`bch.ksy` covers the container, not the content.** A BCH's six regions chain
+end to end and the last one finishes exactly at EOF, which is the cheapest way
+to confirm a correct read. Its main header is fifteen content groups, each a
+*(pointer table offset, count, dictionary offset)* triple relative to the main
+header — fifteen is self-evident in the files, since the first dictionary sits
+at 0xb4, exactly fifteen twelve-byte triples in. The group ordering is
+confirmed semantically rather than assumed: the Mii body container reports one
+model named `Mii_body_00`, two materials and two textures (`body`, `Mii_Pen`);
+its animation counterpart reports 62 skeletal and 62 material animations; and
+the shared-data container reports 63 shaders, whose names are all
+`N@DefaultShader`.
+
+What the definition deliberately stops short of is the content itself. Model,
+material and animation bodies are pre-baked PICA200 register programs, and
+turning those into geometry is a different job from parsing a container. The
+dictionaries give every object's name and the pointer tables give where each
+body starts.
+
+### Not yet covered
+
+BCLYT, BCLAN, BCFNT, CGFX/BCRES and BNTX have no definitions here because
+there are no samples to check them against, and BFRES has exactly one — a
+Switch-era `FRES    ` file that happens to be present twice under different
+names. Writing any of them would mean shipping structure that has never been
+run against real data, which is the one thing every other definition in this
+repository can claim.
