@@ -10,7 +10,7 @@ This merges two collections that had drifted apart:
 * [WiiLink24/Kaitais](https://github.com/WiiLink24/Kaitais) — v3 channel variants, Terebi
   no Tomo, WC24 mail, Wii Fit Plus
 
-73 definitions, all of which parse.
+76 definitions, all of which parse.
 
 ## Layout
 
@@ -25,14 +25,16 @@ channels/
 system/              NAND, WC24 (download/friend/mail/send/recv), ticket + TMD,
                      Mii, SYSCONF, Wii Shop, play record, DHCP, IPL save
 games/               Mario Kart Wii, My Pokémon Ranch, Wii Fit Plus, room.xml.bin,
-                     Animal Crossing City Folk DLC items (.bitm), Swapdoodle BPK1 notes
+                     Animal Crossing City Folk DLC items (.bitm), Swapdoodle BPK1 notes,
+                     Super Smash Bros. Brawl's PAC archive
 media/               Mobiclip — Wii, DS, .mods, .moflex, .vx
+nitro/               the DS SDK generation — NSBMD model containers
 nw4r/                NintendoWare for Revolution — the BRRES archive and its
                      MDL0/TEX0/PLT0 members, BRLYT layouts, BRLAN layout
                      animation, BRFNT bitmap fonts
 nw4c/                the 3DS/Wii U generation — SARC archives, BFLYT layouts,
                      BFLAN layout animation, BFLIM images, BCH model
-                     containers
+                     containers, Wii U BFRES model containers
 ```
 
 ## Verifying against a real console
@@ -325,11 +327,71 @@ turning those into geometry is a different job from parsing a container. The
 dictionaries give every object's name and the pointer tables give where each
 body starts.
 
+### `games/pac.ksy`, `nw4c/bfres.ksy`, `nitro/nsbmd.ksy` — new
+
+Added from the same sibling project's ground truth (`wiimms-szs-tools-nintendo`,
+`lib-nintendo.c`/`lib-bfres.c`/`lib-nsbmd.c`), each against real retail or
+real-tooling samples rather than any format wiki:
+
+| Definition | Corpus | Cross-check that had to hold |
+|---|---|---|
+| `games/pac.ksy` | 17 archives (all of a Brawl disc's `fighter/Fit*.pac`) | every entry's `data`/`pad` walk lands exactly on the next 0x20-aligned header, through files with up to 13 entries |
+| `nw4c/bfres.ksy` | 2 (Splatoon's `SPL_box_duck.bfres`, a Wii U System Settings `gsys.bfres`) | full FMDL→FVTX/FSHP→index-buffer chain resolves on the first; index buffer size equals `index_count * 2` exactly |
+| `nitro/nsbmd.ksy` | 6 (`giratina`/`giratina_portal`/`giratina_face`/`kawashima`/`crystal`/`ug_base_cur.nsbmd`) | every shape header's tag reads the constant `0x00100000`; `giratina.nsbmd`'s 27-bone dictionary and `kawashima.nsbmd`'s facial-rig bone names match this project's own prior cross-checks |
+
+**PAC's `name` field is not the fixed template string a single sample
+suggests.** Five of the seventeen real files carry `FitPeach`, but two carry
+`FitSonic`, and every `*MotionEtc.pac`/`*Final.pac` carries a name matching
+*that* file's own character and suffix instead. **PAC's first entry is not
+always raw `MiscData` either** — every `*Final.pac` (Final Smash
+transformations) instead packs each entry's data as a nested `bres` (BRRES)
+resource, and `FitPeachFinal.pac`'s second entry is a whole nested `ARC\0`
+archive embedded inside another PAC archive's entry. See `pac.ksy`'s doc
+block for the full breakdown.
+
+**BFRES's pointers are self-relative to the field, not to any shared
+base**, unlike BRRES (relative to the enclosing group) or BCH (relative to
+the main header) — every offset's stored value is added to that offset
+*field's own* file address. Getting this wrong the first time round produced
+a `buffer_info.data_addr` that computed from `_io.pos` at the moment it was
+*read* rather than from the field's fixed position, which happened to work
+for the first buffer accessed in program order and silently pointed at the
+wrong address for every other — caught only because a later cross-check
+(`index_buffer.len_data == index_count * 2` on a real file) forced computing
+the address a second, independent way and comparing. Fixed by threading an
+explicit `base` parameter through every type with a self-relative pointer,
+same fix this project's own `nw4c/` notes below already document for the
+general "`_index` inside a `pos:` expression miscompiles" Kaitai/Python
+pitfall — this was the same bug's less obvious sibling, `_io.pos` used
+*inside an instance* rather than *inside a repeat*.
+
+**NSBMD's model dictionary and shape dictionary use different bases for
+their entries' stored offsets**, and it isn't a copy-paste inconsistency in
+this definition — it matches the reference C exactly. The model
+dictionary's one entry is relative to the `MDL0` block's own start, eight
+bytes before the dictionary header that contains it; the shape dictionary's
+entries are relative to the shape dictionary's own header address, no skew.
+Both were confirmed by resolving the pointer each way and checking that it
+lands on a real `MDL0` tag and a real `0x00100000` shape tag respectively,
+not assumed from either format alone.
+
 ### Not yet covered
 
-BCLYT, BCLAN, BCFNT, CGFX/BCRES and BNTX have no definitions here because
-there are no samples to check them against, and BFRES has exactly one — a
-Switch-era `FRES    ` file that happens to be present twice under different
-names. Writing any of them would mean shipping structure that has never been
-run against real data, which is the one thing every other definition in this
-repository can claim.
+BCLYT, BCLAN, BCFNT, BNTX and CGFX/BCRES still have no definitions here
+because there is still no real sample on this machine to check them
+against — confirmed again this session with a fresh sweep (`mdfind` plus a
+disc-image/CIA search) rather than reusing the earlier "no sample" finding
+verbatim; nothing turned up. GFA (Good-Feel's `GFAC` container, Kirby's
+Epic Yarn / Wario Land Shake It) and DARC (the 3DS "differential archive",
+`darc` magic — Tomodachi Life's `romfs/layout/*.bin`) are in the same boat:
+this project's own sibling repo validated both against a real disc/CIA
+during its own development, but neither the WBFS/CIA nor an unpacked
+extraction survives on this machine now, and `ctrtool` (present) has
+nothing to extract without the original `.cia`. Writing any of the five
+would mean shipping structure that has never been run against real data on
+this side, which is the one thing every other definition in this
+repository can claim. BFRES's Wii U flavour (version 3.x, big-endian) is
+now covered above; the Switch flavour that reuses the same `FRES` magic
+(version 9+, little-endian, a separate BNTX for textures) is a different
+enough layout that it is treated as a distinct, still-uncovered format
+rather than a variant of `bfres.ksy`.
