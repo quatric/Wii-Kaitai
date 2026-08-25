@@ -10,7 +10,13 @@ This merges two collections that had drifted apart:
 * [WiiLink24/Kaitais](https://github.com/WiiLink24/Kaitais) — v3 channel variants, Terebi
   no Tomo, WC24 mail, Wii Fit Plus
 
-76 definitions, all of which parse.
+78 definitions.
+
+> Note: 25 of the older definitions no longer compile under
+> kaitai-struct-compiler 0.11, which rejects a `doc:` key inside `meta:` that
+> earlier versions accepted. The rejection is about where the key sits, not
+> about the layouts, and is a mechanical fix; it is called out here rather
+> than left to be discovered.
 
 ## Layout
 
@@ -31,10 +37,11 @@ media/               Mobiclip — Wii, DS, .mods, .moflex, .vx
 nitro/               the DS SDK generation — NSBMD model containers
 nw4r/                NintendoWare for Revolution — the BRRES archive and its
                      MDL0/TEX0/PLT0 members, BRLYT layouts, BRLAN layout
-                     animation, BRFNT bitmap fonts
+                     animation, BRFNT bitmap fonts, RWAV wave samples
 nw4c/                the 3DS/Wii U generation — SARC archives, BFLYT layouts,
                      BFLAN layout animation, BFLIM images, BCH model
-                     containers, Wii U BFRES model containers
+                     containers, Wii U BFRES model containers, FWAV/CWAV
+                     wave samples
 ```
 
 ## Verifying against a real console
@@ -143,6 +150,50 @@ were then cross-checked by round-tripping a real `.bitm` built with the tool's o
 extracted `pack()` through the compiled `.ksy` — all fields matched byte-for-byte except
 the fixed-width name strings, where Kaitai (correctly) keeps the trailing NUL padding that
 ACDLC strips at the application layer.
+
+### `nw4r/rwav.ksy`, `nw4c/bxwav.ksy` — new, and they found three bugs
+
+The NintendoWare single-sample wave containers, across all three console
+generations: RWAV on the Wii, and FWAV (Wii U, Switch) and CWAV (3DS), which
+share one layout and so share one definition. These are the samples that RWAR
+/ FWAR / CWAR wave archives and RBNK / BRSAR instrument banks reference, which
+is why a loose `.brwav` or `.bcwav` almost always came out of an archive
+rather than off a disc.
+
+Ground truth is the sibling
+[mobipeg](https://github.com/quatric/mobipeg)'s `libavformat/rwav.c`
+demuxer and [wiimms-szs-tools-plus](https://github.com/quatric/wiimms-szs-tools-plus)'s
+`DecodeBXWAV`, checked against real files rather than taken on faith:
+
+| Definition | Corpus | Cross-check that had to hold |
+|---|---|---|
+| `nw4r/rwav.ksy` | 4 real RWAVs carved out of `rv_forest.brsar` (Animal Crossing: City Folk), plus 3 written by mobipeg in each encoding | `len_file` equals the file's real size; the channel table's offsets land on `channel_info`s whose `ofs_adpcm_info` lands on a plausible coefficient block; `loop_end` in nibbles converts to the duration FFmpeg reports |
+| `nw4c/bxwav.ksy` | 3 real CWAVs from a retail 3DS BCSAR and 3 real FWAVs from a retail Wii U BFSAR, plus 6 written by mobipeg | every `sized_reference` and `reference` resolves to its declared type id; `len_header` is 0x40; each channel's `sample_data.ofs` lands inside the DATA block; the first coefficient read through the definition equals the byte pair in the hex dump, in the file's own byte order |
+
+Writing them turned up three real defects in mobipeg's demuxer and muxer,
+each since fixed there:
+
+* **The block table is a `SizedReference`, not a marker.** Its entries are
+  `u16 type_id, u16 padding, u32 offset, u32 size`. Reading the id together
+  with its padding as one 32-bit word gives `0x70000000` in a big-endian
+  FWAV, which passes by luck, and `0x00007000` in a little-endian CWAV,
+  which fails — so every real retail `.bcwav` was rejected outright. The
+  channel-info (0x7100) and DSP-ADPCM-info (0x0300) references had the
+  mirror-image bug on the write side.
+* **The FWAV/CWAV sample-data offset already counts the DATA block's 24
+  bytes of padding.** Every real file stores `0x18` for channel zero, not 0.
+  Adding the padding a second time started each channel three ADPCM frames
+  late and read the same amount past the end: -5.8 dB round-trip SDR against
+  RWAV's 80.7 dB on the identical input.
+* **The DSP coefficient table's byte order belongs to the codec, not the
+  container.** FFmpeg's `adpcm_thp` writes it big-endian and `adpcm_thp_le`
+  little-endian, and since there is no `adpcm_thp_le` *encoder*, every CWAV
+  written from `adpcm_thp` got a byte-swapped table: -24.1 dB.
+
+The one deviation left standing is cosmetic and recorded in
+`rwav.ksy`'s `volume_front_left` doc: retail RWAVs put 8.24 fixed-point unity
+(`0x01000000`) in all four channel volumes, and mobipeg writes a bare `1`.
+Nothing in a decode path reads them.
 
 ## Constraints newly recorded
 
@@ -395,3 +446,12 @@ now covered above; the Switch flavour that reuses the same `FRES` magic
 (version 9+, little-endian, a separate BNTX for textures) is a different
 enough layout that it is treated as a distinct, still-uncovered format
 rather than a variant of `bfres.ksy`.
+
+The obvious next batch is the rest of what the sibling repos gained format
+support for and there are real samples on this machine for: BRSTM / BFSTM /
+BCSTM (the streaming siblings of the wave definitions just added — three
+retail BRSTMs are to hand), THP, HVQM4, RVID, MOC2/MOC3 and DPG from
+mobipeg, and the Wii U WUX header, the DS cartridge header/FNT/FAT and the
+Wii WAD layout from `wiimms-iso-tools-plus`. None of them are written yet,
+and none should be until each has been run over real files the way the two
+wave definitions were.
