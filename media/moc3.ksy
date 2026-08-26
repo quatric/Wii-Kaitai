@@ -21,9 +21,9 @@ doc: |
 
   mobipeg's own demuxer comment describes the region as "a constant
   licence blob (byte-identical across files)" with "only its final 8
-  bytes" per-file. Measured across six real MOC3/`fla2` files, that is
+  bytes" per-file. Measured across all seven real MOC3/`fla2` files, that is
   not what is there. The first 160 bytes (`0x00`-`0x9F` of the region)
-  *are* byte-identical across all six, but a 68-byte run at `0xA0`-`0xE3`
+  *are* byte-identical across all seven, but a 68-byte run at `0xA0`-`0xE3`
   differs in every file, and only then come the two `u4`s this definition
   exposes. Whatever those 68 bytes are -- a per-clip signature or licence
   payload is the obvious guess -- they are not constant, and a tool that
@@ -33,7 +33,7 @@ doc: |
 
   For `fla2` and `gvi3`, the `u4` at `hdr_size + 8` is a real payload
   byte count: `16 + hdr_size + len_payload == filesize` holds exactly on
-  all seven real `fla2` files checked, across two magics and four titles.
+  all eight real `fla2` files checked, across both magics.
 
   For the one real `vid2` file, that invariant fails outright -- the same
   slot holds 545, against a 902340-byte file. The *next* `u4`
@@ -83,9 +83,9 @@ doc: |
   `Motorbike.mo` and `News.mo` (MOC3/`fla2`), `MOLI_Motorbike.mo`
   (MOC2/`fla2`), and `MexicoSmall.mo` (MOC3/`vid2`).
 
-  The `fla2` size invariant was checked on all seven `fla2` files and
+  The `fla2` size invariant was checked on all eight `fla2` files and
   holds exactly. The header region's constant/varying split was measured
-  byte by byte across the six MOC3 `fla2` files. The `vid2` chunk
+  byte by byte across all seven MOC3 `fla2` files. The `vid2` chunk
   arithmetic was checked on chunk 0 of the eighth, and its differing size
   field found by testing the `fla2` invariant against it and having it
   fail.
@@ -123,8 +123,8 @@ instances:
     type: u4
     doc: |
       The payload's real byte length **for `fla2` and `gvi3` only** --
-      `16 + len_header + len_payload` equals the file size for all seven
-      real files of those tags. On the one real `vid2` file this slot
+      `16 + len_header + len_payload` equals the file size for all eight
+      real `fla2` files. On the one real `vid2` file this slot
       holds 545 and the invariant does not hold; see the top-level doc.
   unknown_after_len:
     pos: 12 + len_header
@@ -132,7 +132,7 @@ instances:
     doc: |
       Never read by mobipeg's demuxer, and its meaning is unresolved.
       Not a date, despite being a plausible slot for one: the observed
-      values are 0x009A849B-0x009B51FA across the six MOC3/`fla2` files
+      values are 0x009A849B-0x009B51FA across the MOC3/`fla2` files
       (a tight cluster, uncorrelated with each file's very different
       payload size) and 0x0C2590EA on the MOC2 file -- none of them
       YYYYMMDD-shaped. On the single `vid2` file this slot instead holds
