@@ -217,17 +217,23 @@ mistakes in those comments.
 | `media/thp.ksy` | 3 real GameCube/Wii THP files (Nintendo's own THP Demo Library plus a Wario Land: Shake It cutscene) | full linked-list frame-chain walk lands exactly on `num_frames` for two of them (256 and 811 frames) — THP's chain is lagged by one step, a real property confirmed by hand before it was modelled |
 | `media/hvqm4.ksy` | 2 real Mario Kart Wii movies (`MvOpening.h4m`, `MvHowtoPlay.h4m`) | every GOP and every frame record in both entire files parses, with summed video/audio frame counts matching the file header exactly |
 | `media/rvid.ksy` | 2 files mobipeg's own encoder produced (no retail RVID sample was found) | the frame-size formula (which uses `vres`, not the doubled `height`, for an interlaced stream — an error this session made once before fixing it) reproduces the real gap between frame-table entries exactly, in both an interlaced RGB565 file and a non-interlaced palette-indexed one |
-| `media/moc3.ksy` | 8 real files from an archived MobiClip Windows SDK (7 MOC2/MOC3 `fla2`, 1 MOC3 `vid2`) | the header's own size invariant (`16 + hdr_size + len_payload == filesize`) holds on all 7 `fla2` files; the `vid2` chunk's video/audio split matches exactly on the one real `vid2` file — and corrects two numbers an in-tree comment in mobipeg's own demuxer gets wrong (`hdr_size` 76, not 64, for MOC2; `field1` 2, not 8/10/14) |
+| `media/moc3.ksy` | 8 real files from an archived MobiClip Windows SDK (7 MOC2/MOC3 `fla2`, 1 MOC3 `vid2`) | the header's own size invariant (`16 + hdr_size + len_payload == filesize`) holds on all 7 `fla2` files; the `vid2` chunk's video/audio split matches exactly on the one real `vid2` file — and corrects three things an in-tree comment in mobipeg's own demuxer gets wrong (`hdr_size` 76, not 64, for MOC2; `field1` 2, not 8/10/14; and the header region is not the byte-identical constant blob it is described as — 68 of its bytes differ in every file) |
 | `media/dpg.ksy` | 3 files mobipeg's own muxer produced, one per header generation (no MoonShell-authored file exists on this machine — DPG is homebrew-only, never used by a retail title) | a from-scratch Python GOP-index scan (searching the encoded video for the `0x000001B8` start code) matches the file's own stored index entry for entry |
 | `system/wux.ksy` | A synthetic 10-sector image with one deliberately duplicated sector, converted and read back by the real `wit` binary | `wit XINFO` reports the same dedup count ("9 of 10 stored") this definition computes, and `wit XCONVERT` back to WUD reconstructs the original image byte for byte — matching what this definition's own `index`/`stored_sectors` walk reconstructs |
 | `nitro/nds.ksy` | 2 real retail DS cartridges (Bomberman Blitz, 1452 files; American Girl - Julie Finds a Way) | every file this definition's FNT/FAT walk resolves — full path, byte offset, size — matches `wit XEXTRACT`'s own output one for one, all 1452 files on the larger cartridge |
 | `system/wad.ksy` | 2 real WAD titles (DiskCheck v1.00, 2 contents; Photo Channel v1.1, 8 contents) | every section size/offset and every content's stored (16-byte-then-64-byte rounded) size matches `wit XINFO`, including real cases where the two roundings actually change the number (2712153→2712160, 1892→1904) |
 
-Two real, independently-confirmed mistakes came out of writing these
+Three real, independently-confirmed mistakes came out of writing these
 against real files rather than trusting mobipeg's own source comments:
-MOC2's header size is 76 bytes, not the 64 the in-tree comment claims, and
-its `field1` is 2, not 8/10/14; both are stated as directly observed in
-`media/moc3.ksy`'s own doc rather than repeating the stale comment.
+MOC2's header size is 76 bytes, not the 64 the in-tree comment claims; its
+`field1` is 2, not 8/10/14; and the MOC3 header region is **not** the
+"constant licence blob (byte-identical across files)" that comment calls
+it — measured byte by byte across six real files, its first 160 bytes are
+identical but a 68-byte run at `0xA0`-`0xE3` differs in every one. That
+last one was caught only by measuring rather than re-reading: the first
+draft of `media/moc3.ksy` repeated the "byte-identical" claim verbatim,
+and it took a byte-level diff across the corpus to falsify it. All three
+are now stated as directly observed in that definition's own doc.
 `media/rvid.ksy` also went through one real mistake of this session's own
 making — its frame-size formula first used `height` (the interlaced,
 doubled value) instead of `vres` (what the container actually stores per
