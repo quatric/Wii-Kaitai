@@ -10,7 +10,7 @@ This merges two collections that had drifted apart:
 * [WiiLink24/Kaitais](https://github.com/WiiLink24/Kaitais) — v3 channel variants, Terebi
   no Tomo, WC24 mail, Wii Fit Plus
 
-78 definitions.
+87 definitions.
 
 > Note: 25 of the older definitions no longer compile under
 > kaitai-struct-compiler 0.11, which rejects a `doc:` key inside `meta:` that
@@ -29,15 +29,19 @@ channels/
   nintendo/          dllist, .info (soft), thumbnail, dstrial — v6 and v3
   terebi_no_tomo/    Japanese TV guide: header, EPG, strings
 system/              NAND, WC24 (download/friend/mail/send/recv), ticket + TMD,
-                     Mii, SYSCONF, Wii Shop, play record, DHCP, IPL save
+                     Mii, SYSCONF, Wii Shop, play record, DHCP, IPL save,
+                     Wii U WUX disc images, Wii installable titles (WAD)
 games/               Mario Kart Wii, My Pokémon Ranch, Wii Fit Plus, room.xml.bin,
                      Animal Crossing City Folk DLC items (.bitm), Swapdoodle BPK1 notes,
                      Super Smash Bros. Brawl's PAC archive
-media/               Mobiclip — Wii, DS, .mods, .moflex, .vx
-nitro/               the DS SDK generation — NSBMD model containers
+media/               Mobiclip — Wii, DS, .mods, .moflex, .vx, MOC2/MOC3;
+                     THP, HVQM4, RocketVideo and DPG movies
+nitro/               the DS SDK generation — NSBMD model containers, DS
+                     cartridge header/FNT/FAT
 nw4r/                NintendoWare for Revolution — the BRRES archive and its
                      MDL0/TEX0/PLT0 members, BRLYT layouts, BRLAN layout
-                     animation, BRFNT bitmap fonts, RWAV wave samples
+                     animation, BRFNT bitmap fonts, RWAV wave samples,
+                     BRSTM streams
 nw4c/                the 3DS/Wii U generation — SARC archives, BFLYT layouts,
                      BFLAN layout animation, BFLIM images, BCH model
                      containers, Wii U BFRES model containers, FWAV/CWAV
@@ -194,6 +198,51 @@ The one deviation left standing is cosmetic and recorded in
 `rwav.ksy`'s `volume_front_left` doc: retail RWAVs put 8.24 fixed-point unity
 (`0x01000000`) in all four channel volumes, and mobipeg writes a bare `1`.
 Nothing in a decode path reads them.
+
+### Streams, video containers, and two system formats — new, real samples for all nine
+
+Nine more definitions, spanning both sibling projects: `nw4r/brstm.ksy`
+(BRSTM/BFSTM/BCSTM, the streamed siblings of `nw4r/rwav.ksy`/
+`nw4c/bxwav.ksy`'s one-shot samples), `media/thp.ksy`, `media/hvqm4.ksy`,
+`media/rvid.ksy`, `media/moc3.ksy` and `media/dpg.ksy` from mobipeg, and
+`system/wux.ksy`, `nitro/nds.ksy` and `system/wad.ksy` from
+`wiimms-iso-tools-plus`. Every one was checked against real files or (where
+named below) against the real tool that reads the format, not against the
+in-tree source comments alone — which is how two of them turned up
+mistakes in those comments.
+
+| Definition | Corpus | Cross-check that had to hold |
+|---|---|---|
+| `nw4r/brstm.ksy` | 3 real BRSTMs (a Wii U TVii jingle, 2 Mario Power Tennis tracks) + 1 real BFSTM (a Nintendo TVii title-logo jingle) | channel count, sample rate, loop flag, total samples and the first coefficient of every channel match a from-scratch Python re-implementation of mobipeg's demuxer and `ffprobe`, across two container generations (RSTM's channel table is a real two-layer indirection; FSTM/CSTM's is pure arithmetic) |
+| `media/thp.ksy` | 3 real GameCube/Wii THP files (Nintendo's own THP Demo Library plus a Wario Land: Shake It cutscene) | full linked-list frame-chain walk lands exactly on `num_frames` for two of them (256 and 811 frames) — THP's chain is lagged by one step, a real property confirmed by hand before it was modelled |
+| `media/hvqm4.ksy` | 2 real Mario Kart Wii movies (`MvOpening.h4m`, `MvHowtoPlay.h4m`) | every GOP and every frame record in both entire files parses, with summed video/audio frame counts matching the file header exactly |
+| `media/rvid.ksy` | 2 files mobipeg's own encoder produced (no retail RVID sample was found) | the frame-size formula (which uses `vres`, not the doubled `height`, for an interlaced stream — an error this session made once before fixing it) reproduces the real gap between frame-table entries exactly, in both an interlaced RGB565 file and a non-interlaced palette-indexed one |
+| `media/moc3.ksy` | 8 real files from an archived MobiClip Windows SDK (7 MOC2/MOC3 `fla2`, 1 MOC3 `vid2`) | the header's own size invariant (`16 + hdr_size + len_payload == filesize`) holds on all 7 `fla2` files; the `vid2` chunk's video/audio split matches exactly on the one real `vid2` file — and corrects two numbers an in-tree comment in mobipeg's own demuxer gets wrong (`hdr_size` 76, not 64, for MOC2; `field1` 2, not 8/10/14) |
+| `media/dpg.ksy` | 3 files mobipeg's own muxer produced, one per header generation (no MoonShell-authored file exists on this machine — DPG is homebrew-only, never used by a retail title) | a from-scratch Python GOP-index scan (searching the encoded video for the `0x000001B8` start code) matches the file's own stored index entry for entry |
+| `system/wux.ksy` | A synthetic 10-sector image with one deliberately duplicated sector, converted and read back by the real `wit` binary | `wit XINFO` reports the same dedup count ("9 of 10 stored") this definition computes, and `wit XCONVERT` back to WUD reconstructs the original image byte for byte — matching what this definition's own `index`/`stored_sectors` walk reconstructs |
+| `nitro/nds.ksy` | 2 real retail DS cartridges (Bomberman Blitz, 1452 files; American Girl - Julie Finds a Way) | every file this definition's FNT/FAT walk resolves — full path, byte offset, size — matches `wit XEXTRACT`'s own output one for one, all 1452 files on the larger cartridge |
+| `system/wad.ksy` | 2 real WAD titles (DiskCheck v1.00, 2 contents; Photo Channel v1.1, 8 contents) | every section size/offset and every content's stored (16-byte-then-64-byte rounded) size matches `wit XINFO`, including real cases where the two roundings actually change the number (2712153→2712160, 1892→1904) |
+
+Two real, independently-confirmed mistakes came out of writing these
+against real files rather than trusting mobipeg's own source comments:
+MOC2's header size is 76 bytes, not the 64 the in-tree comment claims, and
+its `field1` is 2, not 8/10/14; both are stated as directly observed in
+`media/moc3.ksy`'s own doc rather than repeating the stale comment.
+`media/rvid.ksy` also went through one real mistake of this session's own
+making — its frame-size formula first used `height` (the interlaced,
+doubled value) instead of `vres` (what the container actually stores per
+frame), caught by the same real-gap cross-check the table above describes,
+not by re-reading the source more carefully.
+
+`media/moc3.ksy`'s `vid2` payload is deliberately incomplete: only the
+first chunk's structure is confirmed. mobipeg's own decoder returns
+`AVERROR_PATCHWELCOME` the moment a `vid2` chunk's audio portion needs
+reading, so no real file has ever been played past its first
+audio-bearing chunk by that project's own tooling, and this session's
+attempt to locate chunk 1 by walking the stored `chunk_size` forward
+landed on bytes that do not parse as a plausible next header. The
+definition exposes `first_chunk` rather than an array for exactly that
+reason — see its own doc for the full account.
 
 ## Constraints newly recorded
 
@@ -447,11 +496,8 @@ now covered above; the Switch flavour that reuses the same `FRES` magic
 enough layout that it is treated as a distinct, still-uncovered format
 rather than a variant of `bfres.ksy`.
 
-The obvious next batch is the rest of what the sibling repos gained format
-support for and there are real samples on this machine for: BRSTM / BFSTM /
-BCSTM (the streaming siblings of the wave definitions just added — three
-retail BRSTMs are to hand), THP, HVQM4, RVID, MOC2/MOC3 and DPG from
-mobipeg, and the Wii U WUX header, the DS cartridge header/FNT/FAT and the
-Wii WAD layout from `wiimms-iso-tools-plus`. None of them are written yet,
-and none should be until each has been run over real files the way the two
-wave definitions were.
+That batch has since been written: `nw4r/brstm.ksy` (BRSTM/BFSTM/BCSTM),
+`media/thp.ksy`, `media/hvqm4.ksy`, `media/rvid.ksy`, `media/moc3.ksy`,
+`media/dpg.ksy` from mobipeg, and `system/wux.ksy`, `nitro/nds.ksy`,
+`system/wad.ksy` from `wiimms-iso-tools-plus` — see the section below for
+what each was checked against.
