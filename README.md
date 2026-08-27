@@ -33,7 +33,8 @@ system/              NAND, WC24 (download/friend/mail/send/recv), ticket + TMD,
                      Wii U WUX disc images, Wii installable titles (WAD)
 games/               Mario Kart Wii, My Pokémon Ranch, Wii Fit Plus, room.xml.bin,
                      Animal Crossing City Folk DLC items (.bitm), Swapdoodle BPK1 notes,
-                     Super Smash Bros. Brawl's PAC archive
+                     Super Smash Bros. Brawl's PAC archive, Game & Wario's FZIP container
+                     and WARC archive
 media/               Mobiclip — Wii, DS, .mods, .moflex, .vx, MOC2/MOC3;
                      THP, HVQM4, RocketVideo and DPG movies
 nitro/               the DS SDK generation — NSBMD model containers, DS
