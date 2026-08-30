@@ -47,6 +47,10 @@ seq:
     type: u1
     repeat: expr
     repeat-expr: 3
+    doc: |
+      Confirmed unread: `FUN_8000c734` (0x8000c734) touches header byte offsets 0x19
+      (`region_flag`, ≤2) and 0x1A (`unknown_2`, ≤1) but never this range in between.
+      Genuine padding between `country_code` and `language_code`.
   - id: language_code
     type: u1
     enum: language_code
@@ -55,6 +59,10 @@ seq:
     enum: region_flag
   - id: unknown_2
     type: u1
+    doc: |
+      Validated at 0x8000C9C8 as `<= 1` (boolean). Validated but never acted on -
+      searching every direct-displacement byte load of this offset across the binary
+      finds only the bounds check, no consumer. WiiLink writes 1; 0 is equally legal.
   - id: padding
     type: u1
   - id: message_offset
@@ -140,38 +148,24 @@ types:
       - id: global_timestamp
         type: u4
         doc: Timestamp is minutes since 2000.
-      - id: attribute
+      - id: timezone_tag
         type: u1
         doc: |
-          Validated at 0x8000CB00 as `<= 5, or exactly 0xFF`; anything else
-          rejects the entire file. Read with `lbz` - it is ONE BYTE, not the u32
-          that generators commonly declare here.
+          Validated as `<= 5, or exactly 0xFF` (0x8000cb00), one byte via `lbz` -
+          NOT the u32 generators often declare here. Never read anywhere else, so
+          it has no visible effect on the displayed forecast; its only consumer is
+          outside this title.
 
-          Never read anywhere else in the binary, which is why changing it has
-          no visible effect on the forecast the channel draws. Its consumer is
-          outside this title. 0xFF is the format's usual "not applicable"
-          sentinel and is what Nintendo's Japanese files carry throughout.
+          Nintendo's retail values: 1 for most cities, 5 for a few (Evansville,
+          Gary, Bowling Green, El Paso), 4 for others (Brasília, Nuuk, Palikir),
+          0xFF (sentinel) throughout on Japanese files. Best guess is a timezone
+          marker - Nuuk shares Denmark's country code but its own zone
+          ([ForecastChannel#5](https://github.com/WiiLink24/ForecastChannel/issues/5)).
 
-          The identical field with the identical rule exists at +0x0C of the
-          summary (WeatherSummary) entry - see that type's `attribute`.
-
-          Values seen in Nintendo's own retail file
-          ([ForecastChannel #5](https://github.com/WiiLink24/ForecastChannel/issues/5)):
-          1 for most cities, 5 for a handful (Evansville, Gary, Bowling Green,
-          El Paso), 4 for a few others (Brasília, Nuuk, Palikir), and the
-          Japan-wide 0xFF sentinel on Japanese versions. A later comment on that
-          issue guesses it tracks time zone - Nuuk is grouped under Denmark's
-          country code but sits in its own zone - which would explain why it
-          never mattered to this title: the client displays whatever
-          local/global timestamps the entry already carries and never derives a
-          zone from this byte.
-      - id: attribute_reserved
+          Same field, same rule, at short_forecast_table's +0x0C.
+      - id: timezone_tag_reserved
         size: 3
-        doc: |
-          Not read by any code path. Note the consequence of the byte split: a
-          generator that declares 0x0C-0x0F as one big-endian u32 and assigns it
-          a small value writes that value into 0x0F, leaving the byte the console
-          actually checks at 0x0C as zero.
+        doc: Unread padding after `timezone_tag`; a u32 write here misses the byte actually checked.
       - id: today_forecast
         type: u2
       - id: today_6_hour_forecast_12am_6am
@@ -302,6 +296,7 @@ types:
         doc: Only used for the Japanese version of this Channel.
       - id: five_day_forecast_day_1_padding
         type: u1
+        doc: Never validated, never read anywhere in the binary. Genuine padding.
       - id: five_day_forecast_day_2
         type: u2
       - id: five_day_forecast_day_2_temperature_celsius_high
@@ -317,6 +312,7 @@ types:
         doc: Only used for the Japanese version of this Channel.
       - id: five_day_forecast_day_2_padding
         type: u1
+        doc: Never validated, never read anywhere in the binary. Genuine padding.
       - id: five_day_forecast_day_3
         type: u2
       - id: five_day_forecast_day_3_temperature_celsius_high
@@ -332,6 +328,7 @@ types:
         doc: Only used for the Japanese version of this Channel.
       - id: five_day_forecast_day_3_padding
         type: u1
+        doc: Never validated, never read anywhere in the binary. Genuine padding.
       - id: five_day_forecast_day_4
         type: u2
       - id: five_day_forecast_day_4_temperature_celsius_high
@@ -347,6 +344,7 @@ types:
         doc: Only used for the Japanese version of this Channel.
       - id: five_day_forecast_day_4_padding
         type: u1
+        doc: Never validated, never read anywhere in the binary. Genuine padding.
       - id: five_day_forecast_day_5
         type: u2
       - id: five_day_forecast_day_5_temperature_celsius_high
@@ -362,6 +360,7 @@ types:
         doc: Only used for the Japanese version of this Channel.
       - id: five_day_forecast_day_5_padding
         type: u1
+        doc: Never validated, never read anywhere in the binary. Genuine padding.
       - id: five_day_forecast_day_6
         type: u2
         doc: Only used for the Japanese version of this Channel.
@@ -382,6 +381,7 @@ types:
         doc: Only used for the Japanese version of this Channel.
       - id: five_day_forecast_day_6_padding
         type: u1
+        doc: Never validated, never read anywhere in the binary. Genuine padding.
       - id: five_day_forecast_day_7
         type: u2
         doc: Only used for the Japanese version of this Channel.
@@ -402,6 +402,7 @@ types:
         doc: Only used for the Japanese version of this Channel.
       - id: five_day_forecast_day_7_padding
         type: u1
+        doc: Never validated, never read anywhere in the binary. Genuine padding.
   short_forecast_table:
     seq:
       - id: country_code
@@ -417,13 +418,13 @@ types:
       - id: global_timestamp
         type: u4
         doc: Timestamp is minutes since 2000.
-      - id: attribute
+      - id: timezone_tag
         type: u1
         doc: |
-          Same field and same rule as the long-forecast entry's `attribute`:
-          validated at 0x8000CBE8 as `<= 5, or exactly 0xFF`, one byte, read
+          Same field and rule as `long_forecast_table`'s `timezone_tag`:
+          validated at 0x8000cbe8 as `<= 5, or exactly 0xFF`, one byte, read
           nowhere else.
-      - id: attribute_reserved
+      - id: timezone_tag_reserved
         size: 3
       - id: today_forecast
         type: u2
@@ -474,15 +475,25 @@ types:
         type: u1
       - id: today_wind_speed_miles_per_hour
         type: u1
-      - id: unknown_2
+      - id: today_uv_index
         type: u1
         doc: |
-          Validated by the Forecast Channel as ≤ 1 (boolean).
-          Validated but never acted on. WiiLink's value of 1 is legal; 0 also works.
-      - id: unknown_3
+          Not simple padding: `FUN_8000d1ec` (0x8000d1ec) validates it exactly like
+          `long_forecast_table`'s `today_uv_index` - must be `0xFF` or exist in
+          `uv_index_table`. Never displayed by this title; short_forecast_table
+          entries (international summary cities) don't get a UV row.
+      - id: today_laundry_index
         type: u1
-      - id: unknown_4
+        doc: |
+          Same validator, Japan-only branch: checked against `laundry_index_table`
+          only when the console region is Japan, exactly like the long table's
+          `today_laundry_index`. Unused in the short-entry display path.
+      - id: today_pollen_count
         type: u1
+        doc: |
+          Same validator, Japan-only branch: checked against `pollen_count_table`
+          only when the console region is Japan, exactly like the long table's
+          `today_pollen_count`. Unused in the short-entry display path.
       - id: tomorrow_forecast
         type: u2
       - id: tomorrow_6_hour_forecast_12am_6am
@@ -532,14 +543,19 @@ types:
         type: u1
       - id: tomorrow_wind_speed_miles_per_hour
         type: u1
-      - id: today_uv_index
+      - id: tomorrow_uv_index
         type: u1
-      - id: today_laundry_index
+        doc: |
+          Was misnamed `today_uv_index` - it sits right after
+          `tomorrow_wind_speed_miles_per_hour`, in the *tomorrow* 0x1C-byte block that
+          `FUN_8000d1ec` validates on its second pass over this entry (0x8000d1ec).
+          Same rule as `today_uv_index` above: `0xFF` or exists in `uv_index_table`.
+      - id: tomorrow_laundry_index
         type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: today_pollen_count
+        doc: Was misnamed `today_laundry_index`; tomorrow-block equivalent of `today_laundry_index`, Japan-only.
+      - id: tomorrow_pollen_count
         type: u1
-        doc: Only used for the Japanese version of this Channel.
+        doc: Was misnamed `today_pollen_count`; tomorrow-block equivalent of `today_pollen_count`, Japan-only.
   weather_condition_codes_table:
     seq:
       - id: weather_icon_code_1
@@ -552,30 +568,36 @@ types:
     seq:
       - id: uv_index_code
         type: u1
-      - id: unknown
+      - id: padding
         type: u1
         repeat: expr
         repeat-expr: 3
+        doc: |
+          Confirmed unread: the entry-dedup loop in `FUN_8000c734` (0x8000c734) only
+          compares `uv_index_code` and range/parity-checks `uv_index_text_offset`;
+          these 3 bytes are never touched. Alignment before the u4 offset.
       - id: uv_index_text_offset
         type: u4
   laundry_index_table:
     seq:
       - id: laundry_index_code
         type: u1
-      - id: unknown
+      - id: padding
         type: u1
         repeat: expr
         repeat-expr: 3
+        doc: Confirmed unread by the same validator loop as `uv_index_table`'s equivalent field; alignment only.
       - id: laundry_index_text_offset
         type: u4
   pollen_count_table:
     seq:
       - id: pollen_count_code
         type: u1
-      - id: unknown
+      - id: padding
         type: u1
         repeat: expr
         repeat-expr: 3
+        doc: Confirmed unread by the same validator loop as `uv_index_table`'s equivalent field; alignment only.
       - id: pollen_count_text_offset
         type: u4
   location_table:
@@ -624,8 +646,12 @@ types:
           No consumer for this field was found anywhere in the retail binary;
           only the bounds check reads it. WiiLink's generator pins it to 3, its
           maximum, for all 4,272 cities it emits.
-      - id: unknown
+      - id: padding
         type: u2
+        doc: |
+          Confirmed unread: the location-table validator in `FUN_8000c734`
+          (0x8000c734) stops at `location_zoom_2` (byte offset 0x15 of the entry);
+          this trailing u2 is never loaded. Pure alignment to the 0x18-byte stride.
 enums:
   country_code:
     1: japan
