@@ -10,7 +10,7 @@ This merges two collections that had drifted apart:
 * [WiiLink24/Kaitais](https://github.com/WiiLink24/Kaitais) — v3 channel variants, Terebi
   no Tomo, WC24 mail, Wii Fit Plus
 
-87 definitions.
+95 definitions.
 
 > Note: 25 of the older definitions no longer compile under
 > kaitai-struct-compiler 0.11, which rejects a `doc:` key inside `meta:` that
@@ -28,9 +28,11 @@ channels/
   news/              news.bin, savedata.dat
   nintendo/          dllist, .info (soft), thumbnail, dstrial — v6 and v3
   terebi_no_tomo/    Japanese TV guide: header, EPG, strings
+  uranai/            Today & Tomorrow Channel: ephemeris, colour table, score tables, affinity poses, save
 system/              NAND, WC24 (download/friend/mail/send/recv), ticket + TMD,
                      Mii, SYSCONF, Wii Shop, play record, DHCP, IPL save,
-                     Wii U WUX disc images, Wii installable titles (WAD)
+                     Wii U WUX disc images, Wii installable titles (WAD),
+                     DOL executable header, U8 archives
 games/               Mario Kart Wii, My Pokémon Ranch, Wii Fit Plus, room.xml.bin,
                      Animal Crossing City Folk DLC items (.bitm), Swapdoodle BPK1 notes,
                      Super Smash Bros. Brawl's PAC archive, Game & Wario's FZIP container
@@ -61,6 +63,7 @@ enforces it, and the cited address is a runtime virtual address in the retail DO
 | Everybody Votes (USA v512) | `0001000248414A45` | `00000001.app` |
 | Check Mii Out (USA v512) | `0001000248415045` | `00000001.app`, `00000004.app` |
 | Nintendo Channel (USA v1792) | `000100024841464A` | `00000001.app` |
+| Today & Tomorrow Channel (EU v1 and v512; Korea v1; Japan v512) | `0001000148415650`, `...4B`, `...4A` | main program (LZ11-compressed in the WAD: decompress first), `00000006.app` |
 
 The other cross-check used throughout is the WiiLink24 Go generators, which write with
 big-endian `binary.Write` — their structs are byte-exact wire layouts, so a Go struct that
@@ -251,6 +254,43 @@ landed on bytes that do not parse as a plausible next header. The
 definition exposes `first_chunk` rather than an array for exactly that
 reason — see its own doc for the full account.
 
+### `channels/uranai/` — Today & Tomorrow Channel, new
+
+The data formats of the Wii fortune channel (fortunes by Media Kobo). Checked against the
+European build (v1 and v512, byte-identical once decompressed), the Korean build and the
+Japanese build: all three parse with these definitions, and the Korean and Japanese builds,
+which store their data independently, give matching fortunes.
+
+| Definition | Covers |
+|---|---|
+| `ephemeris.ksy` | `logic/wii_ephemeris_decimal_<band>.bin`: 56,978 daily records, nine 9-bit whole-degree longitudes |
+| `colour_table.ksy` | lucky-colour rows (text in the EU WAD, embedded binary in Korea and Japan) |
+| `score_table_eu.ksy` | the compiled-in 6 x 360 score table (EU and Korea, 28-byte entries) |
+| `score_table_jp.ksy` | the Japanese build's table (20-byte entries, static Shift-JIS lines) |
+| `affinity.ksy` | `etc/affinity.bin`: group-photo pose blocks |
+| `save.ksy` | the 456-byte NAND save |
+
+Things worth knowing before generating or editing any of these:
+
+* **The ephemeris is bit-packed, not three fixed-point words.** Each 12-byte payload is nine
+  9-bit degrees, three per 32-bit word; reading the words as `deg / 2^23` looks right
+  because the top nine bits are the first field, but is wrong for the other six.
+* **The score tables are code, not data files.** They live in the main program, so the
+  `.ksy` files describe slices (addresses in each `doc:`). EU and Korea use a 28-byte entry
+  whose six line pointers are filled in at run time; Japan uses a 20-byte entry with static
+  pointers. Their `score` bytes are identical in all three builds.
+* **Only five of the six score tables are used.** The text loader (`0x80026ACC`) fills topics
+  0-4 and every caller of the lookup loops over 0-4, so table 5 (natal Sun) is present but
+  unreachable.
+* **Bands are the same ephemeris at different local midnights.** Band `I` (UTC+9) is the
+  only one in the Korean and Japanese builds and is not shipped in the EU WAD.
+
+`verify.py` parses real dumps with the compiled definitions and cross-checks them against
+small independent decoders. The full rules, the data formats as tables, and how the
+channel's method compares with proper astrology are in the write-up:
+[Today & Tomorrow Channel](https://gist.github.com/quatric/222008fe67167e8dcbda6b022b0f7551). A Python reimplementation of the maths is in
+[today-fortune](https://github.com/quatric/today-fortune).
+
 ## Constraints newly recorded
 
 Contracts a generator has to satisfy, now in `doc:` blocks instead of being folklore:
@@ -271,6 +311,10 @@ Contracts a generator has to satisfy, now in `doc:` blocks instead of being folk
   checked tables (entry sizes `0x0C`, `0x2C`, `0x1C`, `0x10`, `0x18`). The headlines table
   is *not* checked. The console holds 24 of these — one per hour — and revalidates the
   whole set each pass.
+* **`uranai/save.ksy`** — the checksum is a plain 32-bit **byte sum** of offsets `0x04` up to
+  `0x1C8` (`0x8004574C`), not a CRC, and each Mii record starts with the Mii's create-id, which
+  the loader looks up in the Mii Channel database (`0x801941F0`): a Mii that no longer exists
+  is dropped. The file is 456 bytes but is read back as `0x1E0`.
 * **`everybody_votes/votes.ksy`** — the header is deliberately **packed**: the `u4`
   offsets at `0x15`, `0x1A`, `0x1F`, `0x2A`, `0x35`, `0x3B` and `0x41` sit on odd
   addresses and the console reads them with unaligned `lwz`. Do not add alignment padding.
@@ -298,6 +342,10 @@ Contracts a generator has to satisfy, now in `doc:` blocks instead of being folk
   versions; a time-zone-ID theory (Nuuk sits in its own zone despite Denmark's country
   code) is unconfirmed
   ([ForecastChannel #5](https://github.com/WiiLink24/ForecastChannel/issues/5)).
+* **`uranai/save.ksy`** — the four bytes at `+0x0C` of each Mii record, its `0x20`-byte tail
+  and the `0x40`-byte settings block: nothing found reads or writes them.
+* **`uranai/affinity.ksy`** — most of the 124-byte person record beyond position, pose id,
+  motion slots, frame count and three floats.
 * **The `unknown` `u4` at `+0x04` of every CMOC sub-record header.** Read by the display
   code; nothing found that branches on it.
 
@@ -318,7 +366,8 @@ Companion reverse-engineering write-ups for the channels these describe:
 [News](https://gist.github.com/quatric/e571ed2400339867bf9d52701e59db24) ·
 [Everybody Votes](https://gist.github.com/quatric/0b852dbe7f4921eed685cdd2ec3bf021) ·
 [Check Mii Out](https://gist.github.com/quatric/a54c689066e97770488a880e5e355329) ·
-[Nintendo Channel](https://gist.github.com/quatric/d8bb5b80c1a7fb0db9f845a4926aaa75)
+[Nintendo Channel](https://gist.github.com/quatric/d8bb5b80c1a7fb0db9f845a4926aaa75) ·
+[Today & Tomorrow](https://gist.github.com/quatric/222008fe67167e8dcbda6b022b0f7551)
 
 Copyright (c) 2026 quatric
 
