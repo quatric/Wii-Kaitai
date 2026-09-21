@@ -6,16 +6,29 @@ meta:
 doc: |
   The `REFF` container Mario Kart Wii and New Super Mario Bros. Wii ship
   particle-effect definitions in, alongside the matching `BREFT` texture
-  archive. It reuses the exact same 16-byte header shape as BRRES (magic,
-  bom, version, file size, root offset, section count) with a different
-  magic and version (9 for MKW, 11 for NSMB); see `breff_root_head_t` /
+  archive. Unlike BRRES's MDL0/TEX0 sub-formats, BREFF/BREFT effect data
+  has no equivalent in the earlier GameCube NW4C middleware -- it is
+  Revolution-only, tied to the `EFT` particle library, and is far less
+  documented by the Brawl modding community than BRRES proper: BrawlBox
+  and BrawlCrate can view and export the textures inside a BREFT, but
+  neither ever gained a structural editor for BREFF's own effect
+  definitions, and most public notes on the format come from reverse
+  engineering the MKW/NSMBW binaries rather than a leaked SDK header.
+
+  It reuses the exact same 16-byte header shape as BRRES (magic, bom,
+  version, file size, root offset, section count) with a different magic
+  and version (9 for MKW, 11 for NSMB); see `breff_root_head_t` /
   `breff_root_t` / `breff_item_list_t` in `lib-breff.h` and the reading
   code in `IterateFilesBREFF()` (`lib-breff.c`).
 
   Right after the header sits a second `REFF`-tagged block (the "root
   header") whose payload is the root record: a pointer to the item list,
   three fields that are always zero on real MKW files, and an inline
-  NUL-terminated name.
+  NUL-terminated name. Each named item in the list below is one particle
+  effect set (an `EffectSet`/"reff" record referenced by name from the
+  game's effect-table binary), not a single-effect blob -- so a BREFF
+  typically holds many effects addressed by name, the same folder-by-name
+  convention BRRES uses for its own sub-files.
 seq:
   - id: magic
     contents: "REFF"

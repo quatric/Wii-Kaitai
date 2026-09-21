@@ -25,7 +25,10 @@ doc: |
   11 entries to 14 at version 10, and the *meaning* of the later indices
   shifts with it, which is why `ofs_materials` and friends are computed
   rather than read positionally. The mapping below is the one used by a
-  parser validated against 7864 retail models.
+  parser validated against 7864 retail models. Mario Kart Wii, one of the
+  more thoroughly documented retail users of this format (see Tockdom's
+  MDL0 File Format page), ships version 11 models with the full 14-entry
+  table.
 seq:
   - id: header
     type: brres_sub_header

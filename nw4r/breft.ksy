@@ -10,6 +10,15 @@ doc: |
   GX texture -- format, dimensions, an optional palette and mipmaps --
   addressed exactly like BREFF's items, through the same item-list
   layout.
+
+  Unlike a BRRES TEX0, a BREFT image packs its own small header
+  (`breft_image` below) directly in front of the texel data instead of
+  reusing the common 16-byte BRSUB header -- BREFT/BREFF sub-files are
+  not BRSUBs at all, they only share the outer `REFF`/`REFT` container
+  shape with `bres`. Particle-effect textures referenced from a BREFF's
+  effect definitions are looked up here by the same name each item
+  carries in the item list, mirroring how a BRRES TEX0/PLT0 pair is
+  matched by name rather than by pointer.
 seq:
   - id: magic
     contents: "REFT"

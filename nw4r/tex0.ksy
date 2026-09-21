@@ -16,6 +16,13 @@ doc: |
   checked, `format` being CI4/CI8/CI14X2 and `has_palette` being 1 were the
   same condition.
 
+  A TEX0 is not linked to the material that uses it by pointer either: an
+  MDL0 material's texture layer (`texture_ref` in `mdl0.ksy`) names the
+  TEX0 it samples, the same by-name convention TEX0/PLT0 use between
+  themselves. This is consistent with BrawlBox/Tockdom's description of
+  the format, where textures live in the `Textures(NW4R)` folder and are
+  wired to materials purely by matching names.
+
   Texel data starts at `ofs_data` (0x40 in every observed file) and each
   mipmap follows the previous one, each dimension halving, every level
   padded up to the format's block size.
