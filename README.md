@@ -177,6 +177,22 @@ right (and the two on-disk normal encodings — packed float XYZ vs. signed-byte
 comparing a second header's `data_off` against both possible layouts) is what separates
 single-mesh test files from real retail character models.
 
+`hsf.ksy` types every fixed-size record HAL's tool-export format actually has: node
+(`0x144` bytes, transform-bearing joints/replicas/meshes sharing one layout, cameras and
+lights each reusing the same bytes for unrelated fields), material (60 bytes), attribute/
+texture-stage binding (132 bytes), texture (32 bytes) and palette (16 bytes) headers,
+cluster (0xA0-byte "HSFCLUSTER"), part, shape, scene fog and map-attribute bounds records,
+the matrix section's header+array, and motion headers with their per-target track table.
+Verified field-by-field against real fixtures from wiimms-szs-tools-plus's own test suite
+(`hsf-features/{camera,light,replica,cluster}.hsf`) by compiling the `.ksy` and parsing
+them: camera fov/near/far, light color/kind, replica target-node index and cluster
+part-index/weights all came back sane and matched the source values the fixtures were
+built from. The two genuinely non-local features — `faces`' type-4 extended-vertex pool and
+`motions`' keyframe pool, both addressed via a running sum/max across every other record in
+their array rather than a fixed offset — are documented in-line but deliberately left
+unparsed, the same way the project already scopes out algorithmic, version-dependent
+content elsewhere.
+
 ### `games/accf_dlc_bitm.ksy` — new, and a different kind of source
 
 Every other definition here traces back to a retail binary or a console-side validator.
