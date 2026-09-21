@@ -166,8 +166,20 @@ HSD carries no magic number at all — a decoder has to validate header shape (f
 relocation table placement, root/reference counts, the ASCII version tag) rather than a
 byte string, which is why `hsd.ksy` documents that validation burden instead of a simple
 `contents:` match. Its data section is a JOBJ/DOBJ/POBJ/MOBJ/TOBJ object graph reached only
-through the relocation table, so it stays raw bytes in the `.ksy`; the root/reference
-tables are what give named, structural entry points into that graph without a blind scan.
+through the relocation table; `hsd.ksy` types every struct in that graph (JOBJ, DOBJ, POBJ,
+GX_Attribute, MOBJ/HSD_Material, TOBJ, HSD_Image/HSD_Tlut, HSD_EnvelopeDesc,
+HSD_ShapeSetDesc/HSD_ShapeDesc) as `pos:`-addressed instances resolving each 0x20-relative
+pointer field to the next struct, stopping only at the GX display-list opcode stream itself
+(a small stack machine, not a fixed record, and what `ExportHSDModel` exists to decode).
+Verified by compiling the `.ksy` and parsing lib-hsd.c's own two cited fixtures,
+`tests/fixtures/{TyBox,PlMr}.dat`: TyBox's root JOBJ's attribute array decoded to the exact
+POS/NBT/TEX0/TEX1 layout the source comment describes; PlMr's root JOBJ came back with
+subnormal transform floats — which is real Melee character files' "per-fighter root
+indirection" (an FTDATA wrapper in place of a plain JOBJ, modeled here as `ftdata`) rather
+than a bug, and following its `+0x5C` skeleton pointer instead reached a real joint tree
+whose first envelope-weighted POBJ's two-bone influence weights summed to exactly 1.0. The
+root/reference tables are what give named, structural entry points into that graph without
+a blind scan.
 
 HSF's `count > 1` AttributeHeader case (a mesh part table with more than one named part)
 was the missing piece in an earlier pass at this format: it was previously mistaken for
