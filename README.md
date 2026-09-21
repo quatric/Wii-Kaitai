@@ -149,6 +149,34 @@ The `conresult.cgi` response body. Worth a definition of its own because it is t
 CMOC payload that is served raw: no "MC" container, no AES, no LZ10, no signature — just
 a bare array of 0x60-byte records with no file header.
 
+### `games/hsd.ksy`, `games/hsf.ksy` — HAL Laboratory's "sysdolphin" GX runtime
+
+Two faces of the same tool-export format: `hsd.ksy` is the ".dat" archive shipped by Super
+Smash Bros. Melee, Kirby Air Ride and the Wii "Terebi no Tomo"/"TV no Tomo" channel; `hsf.ksy`
+is the "HSFV037" model export used by Mario Party 4–8 (inside their MPBIN container),
+also seen in Kirby Air Ride and Battalion Wars. Both trace back to lib-hsd.c/lib-hsf.c
+in the wiimms-szs-tools-plus decoder, which is itself cross-checked against
+Ploaj/HSDLib (HSD, MIT licensed C#), Ploaj/Metanoia (HSF, MIT licensed C#), Hudson's own
+GPL `hsfview` runtime sources, and — the strongest witness — real retail data: 346 of 352
+"Ty\*.dat" item/object files from a Super Smash Bros. Melee disc dump decode to correct,
+glTF-validated geometry, and real Mario Party 4 board-piece and character (Luigi, Daisy)
+`.hsf` files round-trip through the multi-part decoder.
+
+HSD carries no magic number at all — a decoder has to validate header shape (file size,
+relocation table placement, root/reference counts, the ASCII version tag) rather than a
+byte string, which is why `hsd.ksy` documents that validation burden instead of a simple
+`contents:` match. Its data section is a JOBJ/DOBJ/POBJ/MOBJ/TOBJ object graph reached only
+through the relocation table, so it stays raw bytes in the `.ksy`; the root/reference
+tables are what give named, structural entry points into that graph without a blind scan.
+
+HSF's `count > 1` AttributeHeader case (a mesh part table with more than one named part)
+was the missing piece in an earlier pass at this format: it was previously mistaken for
+"N repeated raw blocks" and abandoned, when it's actually "N independently-named mesh
+parts" — exactly the shape every multi-part or skinned character model uses. Getting this
+right (and the two on-disk normal encodings — packed float XYZ vs. signed-byte, detected by
+comparing a second header's `data_off` against both possible layouts) is what separates
+single-mesh test files from real retail character models.
+
 ### `games/accf_dlc_bitm.ksy` — new, and a different kind of source
 
 Every other definition here traces back to a retail binary or a console-side validator.
