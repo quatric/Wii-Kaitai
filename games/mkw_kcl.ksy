@@ -176,6 +176,10 @@ types:
         type: u4
         repeat: expr
         repeat-expr: model_count
+        doc: |
+          Absolute offset of each model's `model_v2` header; parse each
+          one individually at that offset (per-index substreams are not
+          expressible as a single Kaitai instance here).
       octree:
         io: _root._io
         pos: octree_off
@@ -215,7 +219,9 @@ types:
         io: _root._io
         pos: sect_off[2]
         type: triangle_v2
-        repeat: eos
+        repeat: expr
+        repeat-expr: (sect_off[3] - sect_off[2]) / 0x14
+        doc: Triangle pool; bounded by the octree's start offset (`sect_off[3]`).
       octree:
         io: _root._io
         pos: sect_off[3]
