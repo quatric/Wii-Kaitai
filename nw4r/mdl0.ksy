@@ -494,6 +494,207 @@ types:
         type: s4
       - id: ofs_data
         type: s4
+    instances:
+      self_ofs:
+        value: _io.pos - 12
+        doc: Absolute position this record started at; ofs_data is relative to it.
+      commands:
+        pos: self_ofs + ofs_data
+        size: len_data
+        type: gx_command_stream(_parent.vertex_format_lo, _parent.vertex_format_hi)
+        if: len_data > 0
+        doc: |
+          The raw GX command stream, decoded generically. See
+          `gx_command`/`gx_opcode`: draw commands are fully expanded into
+          per-vertex attribute indices using this object's vertex
+          descriptor (`vertex_format_lo/hi`); CP/XF register loads are
+          exposed as (register, value) pairs without interpreting what
+          the register controls.
+
+  gx_command_stream:
+    doc: |
+      A GX FIFO command stream as found in an MDL0 object's `definitions`
+      (CP/XF setup) and `primitives` (draw calls) display lists. Layout
+      per the GameCube/Wii GX command format (yagcd chap.6, Dolphin's
+      OpcodeDecoding.cpp/CPMemory.h) -- this is fixed console hardware
+      behaviour, not something specific to this file format.
+    params:
+      - id: vcd_lo
+        type: u4
+      - id: vcd_hi
+        type: u4
+    seq:
+      - id: commands
+        type: gx_command(vcd_lo, vcd_hi)
+        repeat: eos
+
+  gx_command:
+    params:
+      - id: vcd_lo
+        type: u4
+      - id: vcd_hi
+        type: u4
+    seq:
+      - id: opcode
+        type: u1
+        enum: gx_opcode
+      - id: body
+        type:
+          switch-on: opcode
+          cases:
+            gx_opcode::draw_quads: primitive_body(vcd_lo, vcd_hi)
+            gx_opcode::draw_triangles: primitive_body(vcd_lo, vcd_hi)
+            gx_opcode::draw_triangle_strip: primitive_body(vcd_lo, vcd_hi)
+            gx_opcode::draw_triangle_fan: primitive_body(vcd_lo, vcd_hi)
+            gx_opcode::draw_lines: primitive_body(vcd_lo, vcd_hi)
+            gx_opcode::draw_line_strip: primitive_body(vcd_lo, vcd_hi)
+            gx_opcode::draw_points: primitive_body(vcd_lo, vcd_hi)
+            gx_opcode::load_cp_reg: cp_reg_load
+            gx_opcode::load_xf_reg: xf_reg_load
+            gx_opcode::load_indx_a: indx_load
+            gx_opcode::load_indx_b: indx_load
+            gx_opcode::load_indx_c: indx_load
+            gx_opcode::load_indx_d: indx_load
+        doc: |
+          `nop` (0x00, used as padding/alignment) has no body and is not
+          listed above, so it naturally consumes only the opcode byte.
+          Any other opcode this project's exporters do not emit will fail
+          to parse past this point rather than silently misreading the
+          stream.
+
+  cp_reg_load:
+    doc: 'GX_LOAD_CP_REG (0x08): one CP register write.'
+    seq:
+      - id: register
+        type: u1
+      - id: value
+        type: u4
+
+  xf_reg_load:
+    doc: 'GX_LOAD_XF_REG (0x10): a run of consecutive XF register writes.'
+    seq:
+      - id: len_minus_1
+        type: u2
+      - id: address
+        type: u2
+      - id: values
+        type: u4
+        repeat: expr
+        repeat-expr: len_minus_1 + 1
+
+  indx_load:
+    doc: |
+      GX_LOAD_INDX_A/B/C/D (0x20/0x28/0x30/0x38): loads one row of an XF
+      index-driven array (used for e.g. normal-matrix or light objects)
+      by index. `packed_addr_len`'s low 12 bits are the XF destination
+      address and its high 4 bits are (row length in u32s) - 1.
+    seq:
+      - id: index
+        type: u2
+      - id: packed_addr_len
+        type: u2
+
+  primitive_body:
+    params:
+      - id: vcd_lo
+        type: u4
+      - id: vcd_hi
+        type: u4
+    seq:
+      - id: num_vertices
+        type: u2
+      - id: vertices
+        type: gx_vertex(vcd_lo, vcd_hi)
+        repeat: expr
+        repeat-expr: num_vertices
+
+  gx_vertex:
+    doc: |
+      One vertex's worth of attribute indices, in GX hardware order.
+      Matrix-index attributes are single presence bits in `vcd_lo`
+      (always a direct byte when present); Position/Normal/Color0-1
+      (`vcd_lo`) and TexCoord0-7 (`vcd_hi`) are each a 2-bit format code
+      (0 none, 1 direct, 2 index8, 3 index16). No MDL0 exporter for this
+      format emits direct-format Position/Normal/Color/TexCoord data --
+      only the matrix-index bits ever use a raw byte -- so format 1 is
+      intentionally left unhandled below; a file that did use it would
+      fail to parse rather than silently desyncing the vertex stream.
+    params:
+      - id: vcd_lo
+        type: u4
+      - id: vcd_hi
+        type: u4
+    seq:
+      - id: pos_mtx_idx
+        type: u1
+        if: (vcd_lo & 1) != 0
+      - id: tex0_mtx_idx
+        type: u1
+        if: ((vcd_lo >> 1) & 1) != 0
+      - id: tex1_mtx_idx
+        type: u1
+        if: ((vcd_lo >> 2) & 1) != 0
+      - id: tex2_mtx_idx
+        type: u1
+        if: ((vcd_lo >> 3) & 1) != 0
+      - id: tex3_mtx_idx
+        type: u1
+        if: ((vcd_lo >> 4) & 1) != 0
+      - id: tex4_mtx_idx
+        type: u1
+        if: ((vcd_lo >> 5) & 1) != 0
+      - id: tex5_mtx_idx
+        type: u1
+        if: ((vcd_lo >> 6) & 1) != 0
+      - id: tex6_mtx_idx
+        type: u1
+        if: ((vcd_lo >> 7) & 1) != 0
+      - id: tex7_mtx_idx
+        type: u1
+        if: ((vcd_lo >> 8) & 1) != 0
+      - id: position
+        type: gx_vertex_attr((vcd_lo >> 9) & 3)
+      - id: normal
+        type: gx_vertex_attr((vcd_lo >> 11) & 3)
+      - id: color0
+        type: gx_vertex_attr((vcd_lo >> 13) & 3)
+      - id: color1
+        type: gx_vertex_attr((vcd_lo >> 15) & 3)
+      - id: tex0_coord
+        type: gx_vertex_attr((vcd_hi >> 0) & 3)
+      - id: tex1_coord
+        type: gx_vertex_attr((vcd_hi >> 2) & 3)
+      - id: tex2_coord
+        type: gx_vertex_attr((vcd_hi >> 4) & 3)
+      - id: tex3_coord
+        type: gx_vertex_attr((vcd_hi >> 6) & 3)
+      - id: tex4_coord
+        type: gx_vertex_attr((vcd_hi >> 8) & 3)
+      - id: tex5_coord
+        type: gx_vertex_attr((vcd_hi >> 10) & 3)
+      - id: tex6_coord
+        type: gx_vertex_attr((vcd_hi >> 12) & 3)
+      - id: tex7_coord
+        type: gx_vertex_attr((vcd_hi >> 14) & 3)
+
+  gx_vertex_attr:
+    doc: |
+      One attribute's index within a vertex: absent (0 bytes), an 8-bit
+      array index, or a 16-bit array index. `index` is looked up in the
+      corresponding array (`object.id_vertex`/`id_normal`/`id_color`/
+      `id_uv` say which array of that kind) to get the actual component
+      values.
+    params:
+      - id: fmt
+        type: u1
+    seq:
+      - id: index
+        type:
+          switch-on: fmt
+          cases:
+            2: u1
+            3: u2
+        if: fmt != 0
 
   material:
     doc: |
@@ -623,3 +824,18 @@ enums:
     0: clamp
     1: repeat
     2: mirror
+  gx_opcode:
+    0x00: nop
+    0x08: load_cp_reg
+    0x10: load_xf_reg
+    0x20: load_indx_a
+    0x28: load_indx_b
+    0x30: load_indx_c
+    0x38: load_indx_d
+    0x80: draw_quads
+    0x90: draw_triangles
+    0x98: draw_triangle_strip
+    0xa0: draw_triangle_fan
+    0xa8: draw_line_strip
+    0xb0: draw_lines
+    0xb8: draw_points
