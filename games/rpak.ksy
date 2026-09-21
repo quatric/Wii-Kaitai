@@ -37,6 +37,16 @@ seq:
 instances:
   data_base:
     value: 0x80 + strg_length + rshd_length
+    doc: >-
+      Absolute first byte of the shared resource-data area.  Every RSHD
+      descriptor's data_ptr is relative to this address.
+  data_region:
+    pos: data_base
+    size-eos: true
+    doc: >-
+      Complete resource-data region after STRG and RSHD.  Resource members
+      can be sparse or out of order, so individual entry bodies remain the
+      authoritative slices.
 types:
   rshd_t:
     seq:
