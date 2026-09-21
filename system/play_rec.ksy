@@ -23,7 +23,7 @@ types:
       - id: name
         type: str
         size: 40
-        encoding: utf-16be
+        encoding: UTF-16BE
         doc: Fixed 20-code-unit UTF-16BE name field, including any NUL padding.
       - id: pad1
         type: u4
