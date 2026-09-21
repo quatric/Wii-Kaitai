@@ -1,6 +1,7 @@
 meta:
   id: misc
   file-extension: bin
+  endian: be
 doc: >-
   Fixed 0x3c38-byte Wii system miscellaneous state record.  It begins with
   three 64-bit timestamp-like values, a 24-byte unrecovered region, and the
