@@ -36,6 +36,17 @@ seq:
     type: block_header_t
     repeat: expr
     repeat-expr: num_blocks
+    doc: Directory of block headers; all stored block byte streams follow it.
+  - id: stored_payloads
+    size-eos: true
+    doc: >-
+      Concatenated stored block streams in directory order.  Each block's
+      exact span is given by blocks[i].stored_size; decoding walks this area
+      cumulatively because CMPD stores no per-block offsets.
+instances:
+  payload_offset:
+    value: 8 + num_blocks * 8
+    doc: Absolute offset of the first stored block, immediately after the directory.
 types:
   block_header_t:
     seq:
