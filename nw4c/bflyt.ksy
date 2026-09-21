@@ -20,6 +20,15 @@ doc: |
   needed. `sarc.ksy` in this directory shows the parameterised pattern if
   a single definition must handle both.
 
+  BFLYT is properly an NW4C (NintendoWare for CTR) format -- the `Lyt`
+  library shipped for the 3DS -- but Nintendo's NW4F (NintendoWare for
+  Cafe/Wii U) `Lyt` library is close enough to the same on-disk layout,
+  same `FLYT` magic, same section tags, just re-endianed, that the two
+  have historically been treated as one format by tooling rather than as
+  a 3DS format one console generation later reused verbatim. This
+  definition follows that convention and does not distinguish them beyond
+  the byte-order mark.
+
   Field widths grew from BRLYT and are worth stating, because nothing in
   the file announces them: a pane name is 24 bytes, a material name 28, a
   group name 34, and a group's pane references 24 each. All four were

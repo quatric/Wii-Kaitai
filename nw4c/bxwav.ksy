@@ -13,8 +13,12 @@ doc: |
   `.bcwav` is normally something that was pulled out of an archive rather
   than something a game shipped on its own.
 
-  FWAV and CWAV are the same layout under two magics, which is why one
-  definition covers both. They are the successor to the Wii's RWAV
+  CWAV is the NW4C (NintendoWare for CTR/3DS) name and FWAV the NW4F
+  (NintendoWare for Cafe/Wii U) one; unlike BFRES vs. BCH, where each SDK
+  generation got its own model container, the two sound libraries kept
+  one shared on-disk layout for the sample format and just swapped the
+  magic and default byte order. FWAV and CWAV are the same layout under
+  two magics, which is why one definition covers both. They are the successor to the Wii's RWAV
   (`nw4r/rwav.ksy`) and keep its idea -- DSP-ADPCM, planar PCM16 or planar
   PCM8, one block per channel, never interleaved -- while replacing RWAV's
   fixed header and bare offset table with NW4C's typed references.

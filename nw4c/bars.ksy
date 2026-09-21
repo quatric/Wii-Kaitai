@@ -17,6 +17,13 @@ doc: |
 
   Endianness is a byte-order mark in the header, exactly like SARC/BFRES:
   0xfeff big-endian, 0xfffe little-endian.
+
+  BARS is a sound-library container from the shared NW4C/NW4F `Snd`
+  lineage -- the audio-asset analogue of what SARC is for generic files
+  -- and its two possible payload kinds spell out the split this folder
+  documents: BWAV is the sound library's own internal working format,
+  while FWAV/BFWAV is `nw4c/bxwav.ksy`'s NW4F (Wii U) wave container, the
+  same layout CWAV uses for NW4C (3DS) under a different magic.
 seq:
   - id: magic
     contents: "BARS"

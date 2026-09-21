@@ -17,6 +17,12 @@ doc: |
   `len_data` by the padded pixel count gives exactly 8 bits per pixel for
   L8, A8 and LA4, 16 for LA8, RGB565 and RGBA4, 32 for RGBA8, and 4 for
   L4, A4 and ETC1, across all 667 samples.
+
+  BFLIM is the 3DS/NW4C texture format referenced by a BFLYT `txl1`
+  entry (`nw4c/bflyt.ksy`). Its Wii U/NW4F counterpart is a texture
+  wrapped directly in GX2 surface form (see `nw4c/gtx.ksy`) rather than a
+  separate tiled-PICA200 file, so unlike BFLYT/BFLAN this format does not
+  carry over unchanged to the Wii U generation -- it is 3DS-specific.
 instances:
   header:
     pos: _io.size - 0x28

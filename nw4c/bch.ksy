@@ -9,6 +9,16 @@ doc: |
   verbatim: much of the file is pre-baked PICA200 command lists rather
   than described geometry.
 
+  BCH is the true NW4C (NintendoWare for CTR) native model format --
+  "CTR" is the 3DS's development codename, the direct successor to the
+  Wii's "RVL"/Revolution codename that names NW4R. Where BRRES (`nw4r/`)
+  is one archive holding whichever model/texture/animation sub-files it
+  contains, and BFRES (`nw4c/bfres.ksy`, actually NW4F/"Cafe" -- the Wii
+  U's codename, not NW4C at all despite living in this directory) is the
+  Wii U's self-relative-pointer redesign of the same idea, BCH is
+  CTR-specific: a fixed fifteen-slot content table baked to match the
+  PICA200 GPU's own command format, with no Wii U or Switch equivalent.
+
   The file is six regions laid end to end -- main header, string table,
   GPU commands, data, extended data, relocation table -- each with its own
   offset and length in the header. They chain: every region's offset plus

@@ -45,10 +45,15 @@ nw4r/                NintendoWare for Revolution — the BRRES archive and its
                      MDL0/TEX0/PLT0 members, BRLYT layouts, BRLAN layout
                      animation, BRFNT bitmap fonts, RWAV wave samples,
                      BRSTM streams
-nw4c/                the 3DS/Wii U generation — SARC archives, BFLYT layouts,
-                     BFLAN layout animation, BFLIM images, BCH model
-                     containers, Wii U BFRES model containers, FWAV/CWAV
-                     wave samples
+nw4c/                the successor SDK generations to NW4R — NW4C
+                     (NintendoWare for CTR/3DS: SARC archives, BFLYT
+                     layouts, BFLAN layout animation, BFLIM images, BCH
+                     model containers, CWAV wave samples) and NW4F
+                     (NintendoWare for Cafe/Wii U: BFRES model
+                     containers, FWAV wave samples, GX2/GTX textures) —
+                     kept in one folder since they share SARC, BFLYT/
+                     BFLAN and the FWAV/CWAV wave layout, but are
+                     otherwise two distinct, related SDK lineages
 ```
 
 ## Verifying against a real console

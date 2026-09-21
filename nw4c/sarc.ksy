@@ -25,6 +25,13 @@ doc: |
   computed order is nested inside `archive`, because a type declared
   alongside it would silently inherit this file's default instead.
 
+  SARC itself is not tied to either console SDK generation the way the
+  formats it typically carries are -- it is a plain filesystem-style
+  archive used across both the 3DS's NW4C tooling and the Wii U's NW4F
+  tooling (and by non-NintendoWare Nintendo titles besides), which is why
+  it can hold either generation's payloads: the Swapdoodle corpus this
+  definition was checked against is entirely NW4C-era `.bflyt`/`.bflan`.
+
   Names are optional. A node stores a hash of its path either way, so the
   runtime can look a file up without the string table present, and the top
   byte of `attributes` says whether a name was kept as well. Every file in

@@ -25,6 +25,11 @@ doc: |
   from its curve. The two name tables are the exception and are relative
   to the start of their own offset table.
 
+  Like `bflyt.ksy`, this is nominally an NW4C (NintendoWare for CTR)
+  format, but the NW4F (Cafe/Wii U) `Lyt` library's animation files share
+  the same `FLAN` magic and section layout, byte order aside, so this
+  definition is not restricted to 3DS files.
+
   Widths were measured, not assumed: an animation entry's name is 28 bytes
   -- across 5371 entries in the sample set, 28 is the only width for which
   the name is clean ASCII, the padding is all NUL, and the two bytes after

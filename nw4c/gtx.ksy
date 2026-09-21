@@ -12,6 +12,18 @@ doc: |
   surface layout and need a separate detiling pass to become linear RGBA;
   this definition only exposes the container structure, not decoded pixels.
   Ported from lib-gtx.c's `ScanGTX`.
+
+  GTX sits a level below NintendoWare rather than inside it: it is the
+  Cafe SDK's raw GX2 surface dump, the same struct (`GX2Surface`/
+  `GX2Texture`) the Latte GPU driver itself consumes, with no NW4F (or
+  NW4C) resource-group wrapper around it. `bfres.ksy`'s FTEX entries wrap
+  a GX2 texture in exactly this way inside a full NW4F BFRES archive;
+  `.gtx`/`.gsh` files are what a Wii U dev tool exports when it wants the
+  raw surface on its own -- both describe the same underlying GX2 texture
+  layout, just at different levels of the SDK. Unlike BCH (3DS/NW4C, tied
+  to the PICA200 command format) there is no CTR/3DS equivalent of GTX:
+  the 3DS's raw texture dumps are CTPK, an unrelated format not covered
+  in this repository.
 seq:
   - id: magic
     contents: "Gfx2"

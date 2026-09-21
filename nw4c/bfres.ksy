@@ -11,6 +11,18 @@ doc: |
   little-endian container with its own layout and a separate BNTX for
   textures, and is out of scope.
 
+  BFRES belongs to NW4F (NintendoWare for Cafe -- "Cafe" being the Wii
+  U's own SDK codename), not to NW4C (NintendoWare for CTR, the 3DS
+  lineage that produced BCH/BFLYT/BFLAN/BFLIM/CWAV). The two are related
+  sibling generations of the same middleware family rather than one SDK
+  wearing two names: NW4C shipped for the 3DS, NW4F for the Wii U, and
+  each has its own model container (BCH vs. BFRES) even though the 2D
+  layout/animation/font tooling (BFLYT/BFLAN/BFLIM) and the wave-sample
+  container (`bxwav.ksy`'s FWAV/CWAV pair) were shared or paralleled
+  across both. This repository lumps every 3DS- and Wii U-originated
+  post-NW4R format into one `nw4c/` folder for convenience; it is not a
+  claim that BFRES or `gtx.ksy`'s GTX are themselves NW4C formats.
+
   Unlike BRRES, whose resource-group offsets are relative to the group
   that holds them, and BCH, whose offsets are relative to the main
   header, BFRES is **self-relative**: every pointer field's value is added
