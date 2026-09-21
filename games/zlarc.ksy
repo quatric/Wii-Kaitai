@@ -35,28 +35,22 @@ types:
         type: u4
         doc: Number of directory offsets and member descriptors.
       - id: descriptor_offsets
+        type: descriptor_offset_t
+        repeat: expr
+        repeat-expr: num_entries
+        doc: Offset-directory records, each resolving its descriptor through
+          its own absolute offset.
+
+  descriptor_offset_t:
+    seq:
+      - id: value
         type: u4
-        repeat: expr
-        repeat-expr: num_entries
-        doc: Absolute offsets, within the decompressed body, of variable-size
-          member descriptors.
-      - id: descriptors
-        type: descriptor_t
-        repeat: expr
-        repeat-expr: num_entries
-        doc: |
-          Variable-size descriptors in canonical writer order. Canonical files
-          place them consecutively immediately after the directory, matching
-          this sequential parse. The separate offsets remain available for
-          readers that need to accept reordered descriptors.
+        doc: Absolute descriptor offset within the decompressed archive body.
     instances:
-      data_start:
-        value: descriptor_offsets[num_entries - 1] + 12 + descriptors[num_entries - 1].name_length
-        doc: |
-          Start of concatenated member data for canonical files, whose sorted
-          descriptors are contiguous and ordered. The reader permits arbitrary
-          order and derives this as the maximum descriptor end; Kaitai cannot
-          express that reduction directly.
+      descriptor:
+        type: descriptor_t
+        pos: value
+        doc: Variable-size descriptor selected through this directory slot.
   descriptor_t:
     seq:
       - id: data_offset
@@ -75,9 +69,3 @@ types:
         encoding: UTF-8
         doc: Filename bytes. Canonical writer output is a NUL-terminated
           basename; the reader removes any trailing NULs before extraction.
-    instances:
-      body:
-        io: _parent._io
-        pos: _parent.data_start + data_offset
-        size: data_size
-        doc: Member bytes addressed relative to the calculated data area.
