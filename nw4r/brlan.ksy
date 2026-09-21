@@ -23,6 +23,15 @@ doc: |
   Offsets nest, each measured from the start of the thing that holds it:
   the entry table from the section, a tag from its entry, a key list from
   its curve.
+
+  The four-letter tags on `RLPA`/`RLVC`/`RLMC`/`RLTS`/`RLTP`/`RLVI` blocks
+  read backwards as "pane animation", "vertex colour", "material colour",
+  "texture SRT", "texture pattern" and "visibility" -- NW4R's own naming
+  convention (compare `CHR0`/`SRT0`/`VIS0` inside BRRES, which drive the
+  3D side of the same engine the same way). No public reverse-engineering
+  write-up of BRLAN internals as detailed as this one is known; the
+  offset chain and per-tag layout above come from parsing the 1303-file
+  sample set directly rather than from an external reference.
 seq:
   - id: magic
     contents: "RLAN"

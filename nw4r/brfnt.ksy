@@ -18,6 +18,15 @@ doc: |
   sample font reads 56 while the `TGLP` section itself begins at 48. The
   same +8 applies to `CWDH.ofs_next` and `CMAP.ofs_next`, which is how the
   chained sections are walked.
+
+  Nintendo reused this exact section layout, under the name BFFNT, for
+  the Wii U revision of the same GX2-based tools, and again as BCFNT on
+  3DS with a smaller header; tockdom's Mario Kart Wii wiki documents the
+  Wii-era `RFNT`/`FINF`/`TGLP`/`CWDH`/`CMAP` shape this file follows.
+  Tools built on that lineage -- BrawlBox and its NW4R-derived
+  successors -- are the usual way these fonts get edited outside of
+  Nintendo's own `nw4r_fontcvtr`.
+doc-ref: 'https://wiki.tockdom.com/wiki/BRFNT_(File_Format)'
 seq:
   - id: magic
     contents: "RFNT"
@@ -77,6 +86,12 @@ types:
         type: u1
       - id: encoding
         type: u1
+        doc: |
+          Character-code space the CMAP blocks' codes are drawn from.
+          Community documentation of this same NW4R field (tockdom's
+          BRFNT page) lists 0 = CP1252, 1 = UTF-16, 2 = Shift-JIS,
+          3 = UTF-8; not independently re-verified against a sample set
+          here, so treat as likely rather than confirmed.
       - id: ofs_tglp
         type: u4
       - id: ofs_cwdh

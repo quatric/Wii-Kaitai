@@ -23,6 +23,17 @@ doc: |
 
   Both were confirmed by locating the strings independently in 250 retail
   layouts.
+
+  BRLYT is NW4R's 2D layout format, reused with only cosmetic renaming as
+  BFLYT on Wii U and CLYT on 3DS; community documentation for all three
+  (tockdom's Mario Kart Wii wiki, KillzXGaming's Switch-Toolbox notes)
+  describes the same section tags and pane header shape, which is how
+  several fields below were cross-checked. Note that the outside
+  community usually calls a pane's `flags` byte 0 bits "widescreen" /
+  "influence alpha" / "visible" (in that bit order) rather than the two
+  bits this definition names -- worth re-checking against a widescreen
+  layout sample if that distinction ever matters here.
+doc-ref: 'https://mkwiiki.org/wiki/BRLYT_(File_Format) (tockdom Mario Kart Wii wiki, BRLYT/BFLYT/CLYT share the same NW4R layout section layout)'
 seq:
   - id: magic
     contents: "RLYT"
@@ -121,7 +132,13 @@ types:
       bytes are subtracted to index into this body. A material carries a
       20-byte name followed by colour registers, texture references, TEV
       stages and blend state, all of which vary in size with per-material
-      flags -- only the name is broken out here.
+      flags -- only the name is broken out here. Community tooling
+      (tockdom's BRLYT page, and BrawlBox/Switch-Toolbox's BFLYT reader
+      for the near-identical Wii U format) lays out a bitfield right
+      after the name that says which of those optional blocks are
+      present and how many texture maps/SRTs/TEV stages to expect; that
+      bitfield is not modelled here, so a full material body still has to
+      be walked by that external spec rather than by this file.
     seq:
       - id: num_ofs_materials
         type: u2
@@ -253,7 +270,11 @@ types:
     doc: |
       `wnd1`: a nine-patch frame. The pane header is typed; the frame
       material and per-corner texture data that follow vary in size with
-      the frame count and are left raw here.
+      the frame count and are left raw here. Per tockdom's BRLYT notes, a
+      window can be built from 1, 4 or 8 frame pieces (a single stretched
+      texture, or a border split into edges, or edges plus corners), and
+      that frame count -- not modelled here -- drives how many
+      per-frame texture-coordinate/material records follow the header.
     seq:
       - id: base
         type: pane

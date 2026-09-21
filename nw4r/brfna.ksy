@@ -22,6 +22,13 @@ doc: |
   real pixel data and unsupported). This definition exposes the
   compressed sheet bytes as-is; decoding them is `lib-brfna.c`'s job, not
   Kaitai's.
+
+  The 0x10/0x20/0x30 nibble values line up with the common Nintendo
+  compression-type byte used elsewhere on GBA/DS/Wii (LZSS at 0x10,
+  Huffman at 0x20, RLE at 0x30, in the same low-nibble position), so
+  BRFNA's compressed-sheet header looks like that family's convention
+  reused for a font sheet rather than a bespoke scheme -- consistent with,
+  but not confirmed against, any public write-up of BRFNA specifically.
 seq:
   - id: header
     type: brfnt
