@@ -3,8 +3,8 @@ meta:
   title: Pokemon Stadium (N64) PERS-SZP container
   endian: be
   license: CC0-1.0
-imports:
-  - yay0
+  imports:
+    - yay0
 
 doc: |
   Pokemon Stadium (N64) archive wrapper. An 8-byte "PERS-SZP" magic followed
