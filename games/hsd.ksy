@@ -68,7 +68,9 @@ types:
       - id: ofs_location
         type: u4
   node_ref:
-    doc: A root node or external reference: an object offset paired with its name-string offset.
+    doc: |
+      A root node or external reference: an object offset paired with its
+      name-string offset.
     seq:
       - id: ofs_node
         type: u4

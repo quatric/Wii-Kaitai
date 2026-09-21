@@ -13,7 +13,9 @@ doc: |
 seq:
   - id: magic
     contents: [0x48, 0x45, 0x4c, 0x1a]
-    doc: "HEL\\x1a"; the file's own big-endian "HEB\\x1a" variant is not supported."
+    doc: |
+      "HEL\x1a"; the file's own big-endian "HEB\x1a" variant is not
+      supported.
   - id: header_pad
     size: 0x800 - 4
   - id: mast

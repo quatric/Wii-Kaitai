@@ -2,7 +2,7 @@ meta:
   id: gripres
   file-extension: res
   endian: be
-  title: Grip Entertainment "res" resource package (Sesame Street: Elmo's Musical Monsterpiece, Wii)
+  title: "Grip Entertainment \"res\" resource package (Sesame Street: Elmo's Musical Monsterpiece, Wii)"
 doc: |
   Big-endian serialised resource image used by Grip Entertainment's Wii
   titles. A small header points at a type table and a section table (the
