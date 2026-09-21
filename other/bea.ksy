@@ -62,9 +62,9 @@ seq:
 instances:
   name:
     io: _root._io
-    pos: version_major2 >= 5 ? ofs_name_or_reserved : v1_ofs_name
+    pos: 'version_major2 >= 5 ? ofs_name_or_reserved : v1_ofs_name'
     type: bea_string
-    if: (version_major2 >= 5 ? ofs_name_or_reserved : v1_ofs_name) > 0
+    if: '(version_major2 >= 5 ? ofs_name_or_reserved : v1_ofs_name) > 0'
   compression_name:
     io: _root._io
     pos: ofs_compression_name

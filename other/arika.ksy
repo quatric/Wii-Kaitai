@@ -59,7 +59,7 @@ types:
         type: u4
     instances:
       real_sector_size:
-        value: _root.sector_size == 0 ? 0x800 : _root.sector_size
+        value: '_root.sector_size == 0 ? 0x800 : _root.sector_size'
       byte_offset:
         value: ofs_sectors * real_sector_size
       is_compressed:
