@@ -3,6 +3,10 @@ meta:
   file-extension: mod
   application: WiiConnect24
   endian: be
+doc: >-
+  Fixed 0x220-byte WiiConnect24 public-key module.  WC24 tooling treats bytes
+  0x200..0x20f as the embedded AES-128 key; the preceding 0x200 bytes retain
+  public-key material whose internal split is not fully recovered.
 seq:
   - id: rsa_public
     size: 256
