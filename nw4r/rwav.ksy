@@ -19,6 +19,16 @@ doc: |
   data itself -- DSP-ADPCM, planar PCM16 or planar PCM8, one block per
   channel -- carries over unchanged.
 
+  DSP-ADPCM samples here use the same 16-coefficient predictor and
+  history-preload scheme as the standalone `.dsp` file
+  (`nw4r/dsp.ksy`) and BRSTM's channel coefficient blocks
+  (`nw4r/brstm.ksy`); `adpcm_info` below is effectively that same 46-byte
+  SDK structure embedded rather than standalone. Unlike a `.dsp` file,
+  however, an RWAV never carries raw frame bytes as its *only* content --
+  `is_loop`/`loop_start`/`loop_end` and the channel/data-block indirection
+  exist because this format is meant to be pulled out of an RWAR archive
+  and played by an NW4R sound engine, not decoded standalone.
+
   The byte order is whatever `bom` says. Every real file seen is big-endian,
   and this definition is declared `be` for that reason; a little-endian RWAV
   is legal by the header's own rules but has not been observed.
@@ -234,6 +244,12 @@ types:
         doc: Decoder state to restore when jumping back to `loop_start`.
 enums:
   encoding:
-    0: pcm8
-    1: pcm16
-    2: dsp_adpcm
+    0:
+      id: pcm8
+      doc: 8-bit signed PCM, one byte per sample, planar across channels.
+    1:
+      id: pcm16
+      doc: 16-bit signed big-endian PCM (matching `bom`), planar across channels.
+    2:
+      id: dsp_adpcm
+      doc: Nintendo DSP-ADPCM, 8:1 compressed relative to 16-bit PCM; see `nw4r/dsp.ksy` for the codec's bit layout.

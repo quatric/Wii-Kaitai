@@ -10,7 +10,11 @@ doc: |
   DSP-ADPCM, planar PCM16 or planar PCM8, split into fixed-size interleaved
   blocks so a player can start from anywhere without decoding the whole
   file, unlike RWAV/FWAV/CWAV (`nw4r/rwav.ksy`, `nw4c/bxwav.ksy`) which hold
-  one undivided sample.
+  one undivided sample. Inside a BRSAR (`nw4r/brsar.ksy`), a BRSTM is the
+  `sound type == STRM` case: unlike a BRSEQ/BRBNK pairing, a streamed sound
+  carries its own finished waveform and needs no instrument bank at all --
+  the tradeoff for that simplicity is file size, since a streamed track
+  can't reuse instrument samples the way sequenced music does.
 
   Two container generations share this one definition, and they are not
   the same shape:
