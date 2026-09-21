@@ -113,6 +113,14 @@ types:
         pos: filename_start
         type: strz
         encoding: ASCII
+        doc: Resolved NUL-terminated member pathname.
+      compressed_data:
+        io: _root._io
+        pos: file_start
+        size: zsize
+        doc: >-
+          Exact compressed member range. Consumers must try zlib first and
+          then raw DEFLATE; `size` is only an advertised output length.
   strz:
     seq:
       - id: value
