@@ -37,12 +37,16 @@ seq:
     repeat: expr
     repeat-expr: num_blocks
     doc: Directory of block headers; all stored block byte streams follow it.
-  - id: stored_payloads
+  - id: stored_blocks
+    size: blocks[_index].stored_size
+    repeat: expr
+    repeat-expr: num_blocks
+    doc: Exact stored bytes for each block in directory order. The `method`
+      byte alone does not select the decoder; see the format-level contract.
+  - id: trailing_bytes
     size-eos: true
-    doc: >-
-      Concatenated stored block streams in directory order.  Each block's
-      exact span is given by blocks[i].stored_size; decoding walks this area
-      cumulatively because CMPD stores no per-block offsets.
+    doc: Any bytes after the declared block streams. The nintoolbox decoder
+      bounds-checks each block but does not require payloads to end at EOF.
 instances:
   payload_offset:
     value: 8 + num_blocks * 8
