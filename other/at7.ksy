@@ -4,13 +4,28 @@ meta:
   endian: le
   title: AT7 block-compressed stream
 doc: |
-  A sequence of tagged blocks, terminated by a 4-byte `AT7E` marker with
-  no body. `AT7X` blocks store their payload raw; `AT7P` blocks RLE-pack
-  it behind a bit-flag byte (each set bit copies one literal byte from
-  the stream, each clear bit emits a byte from a small back-reference
-  window -- see lib-at7.c's `DecodeAT7` for the exact RLE rule, which
-  isn't captured here since it's a byte-level decode loop rather than a
-  fixed field layout).
+  A sequence of tagged blocks, conventionally terminated by a 4-byte
+  `AT7E` marker with no body. `AT7X` blocks store their payload raw;
+  `AT7P` blocks use LZ-style back-references, not run-length encoding.
+  The 16-bit little-endian block length includes the six-byte tag/length
+  prefix. The decoder rejects lengths below six or beyond EOF.
+
+  In each packed block, a flag byte controls up to eight tokens, consumed
+  from bit 7 down to bit 0. A set bit copies one literal byte. A clear bit
+  consumes a little-endian 16-bit token: zero emits nothing; otherwise
+  its low nibble plus three is the match length (3..18), and its upper
+  12 bits are the backtrack distance. Distance zero or beyond the bytes
+  already produced is invalid. Matches copy from the global output buffer,
+  so they can refer across block boundaries and can overlap themselves.
+  A final group may contain fewer than eight tokens if the block ends.
+  Token expansion is procedural and is not performed by this schema.
+
+  The decoder stops at AT7E and ignores trailing bytes. It also succeeds
+  if EOF is reached without AT7E (even with fewer than four trailing
+  bytes), whereas this Kaitai parser expects the conventional terminator.
+  The writer always emits
+  AT7P blocks (up to 0x7ff0 input bytes each) followed by AT7E, even
+  when an AT7X block might be smaller; it emits just AT7E for empty input.
 seq:
   - id: blocks
     type: block
@@ -43,10 +58,9 @@ types:
         size-eos: true
   packed_block:
     doc: |
-      A bit-flag byte followed by up to 8 tokens (one bit each, MSB
-      first): a set bit is a literal byte, a clear bit is a
-      back-reference token; see lib-at7.c for the exact byte layout of
-      a back-reference token, which this .ksy leaves opaque.
+      Repeated flag groups and variable-width tokens; the exact
+      literal/back-reference rules are described in the format doc.
+      Kept raw because token width depends on each flag bit.
     seq:
       - id: data
         size-eos: true
