@@ -56,6 +56,25 @@ nw4c/                the successor SDK generations to NW4R — NW4C
                      otherwise two distinct, related SDK lineages
 ```
 
+## Added from nintoolbox, 2026-09-29 to 2026-10-07
+
+Definitions for the formats nintoolbox gained handlers for since the Griptonite chunk
+spec moved over. Most come with their reverse-engineering notes in the `doc:` block;
+each was compiled with kaitai-struct-compiler 0.11, and wherever nintoolbox's
+`tests/mk_*.py` generator makes a fixture the generated parser was run against it.
+
+| Folder | Definitions |
+|---|---|
+| `games/` | `abe_bigfile` (Ubisoft Magma ABE BigFile), `jade_bigfile` (Ubisoft Jade `BIG\0`), `arcb` (Sega ARCB), `artefacts_map` (Artefacts Studio `.map`), `blue_castle_big` + `blue_castle_dspi`, `fcat`, `fuax`, `gct0`, `gfmc`, `goliath_pkz_block` + `goliath_pkz_v6` (The Amazing Spider-Man), `harmonix_ark` (decrypted `.hdr`), `hog`, `iga`, `lpak`, `mrqz`, `natsume_bin`, `nibm`, `ninja_nj`, `nsgh_pak` + `nsgh_img` (Guitar Hero Wii), `packv2`, `pckg`, `petz_texl` + `petz_ttpl`, `ptex`, `rcf`, `startrek_wii_tex`, `stgs`, `strt`, `ten_minute_lzss`, `thq_pack`, `wb_l10n`, `wii_res_arc`, `wsi`, `xpk` |
+| `nitro/` | `arte_tex`, `atlus_ndx` + `atlus_idx`, `bmg_le`, `camelot_mdlr`, `capcom_cpac`, `capcom_gml1`, `capcom_mods`, `castlevania_spr`, `cing_wpf`, `dsi_tad`, `dsi_export_bin`, `inio_lzo`, `jupiter_pck`, `l5_pac`, `luminous_iear` + `luminous_lze` + `luminous_scb`, `procyon_swd` + `procyon_smd`, `soma_bgp` + `soma_dad` + `soma_obp` + `soma_pcs`, `treasure_mrg` |
+| `other/` | `avlz` |
+
+Where nintoolbox only detects a container and does not document its inner chunks
+(Procyon SWD/SMD, Camelot MDLR, Capcom MODS/GML1), the definition covers the header and
+leaves the chunk bodies as raw bytes rather than guessing. `BUG\0` Jade files, encrypted
+Ark headers and the DSiWare export's AES layer need a pre-processing step first; the
+`doc:` blocks say how.
+
 ## Verifying against a real console
 
 Where a definition says something is *validated*, that means the console's own parser
