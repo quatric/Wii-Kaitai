@@ -69,6 +69,12 @@ each was compiled with kaitai-struct-compiler 0.11, and wherever nintoolbox's
 | `nitro/` | `arte_tex`, `atlus_ndx` + `atlus_idx`, `bmg_le`, `camelot_mdlr`, `capcom_cpac`, `capcom_gml1`, `capcom_mods`, `castlevania_spr`, `cing_wpf`, `dsi_tad`, `dsi_export_bin`, `inio_lzo`, `jupiter_pck`, `l5_pac`, `luminous_iear` + `luminous_lze` + `luminous_scb`, `procyon_swd` + `procyon_smd`, `soma_bgp` + `soma_dad` + `soma_obp` + `soma_pcs`, `treasure_mrg` |
 | `other/` | `avlz` |
 
+A follow-up batch (2026-10-08) adds, in `games/`: `zoe_hvp`, `namco_nub`, `pda_bra`
+(Messiah `.bra`), `pipeworks_bdg`, `krome_rkv`, `shade_bin` + `shade_lz` + `shade_mcb`
+(Inazuma Eleven Strikers), `sphc_txf`, `messiah_2df_spr`, `worms_spt`, `ea_schl_ngc`,
+`ea_shoc`, `dc2_dcm` and `fakt_fast`; `iga` now also covers version 2 and chunked-LZMA
+members.
+
 Where nintoolbox only detects a container and does not document its inner chunks
 (Procyon SWD/SMD, Camelot MDLR, Capcom MODS/GML1), the definition covers the header and
 leaves the chunk bodies as raw bytes rather than guessing. `BUG\0` Jade files, encrypted
