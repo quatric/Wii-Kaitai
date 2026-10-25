@@ -89,6 +89,7 @@ enforces it, and the cited address is a runtime virtual address in the retail DO
 | Channel | Title | Content |
 |---|---|---|
 | Forecast (USA v7) | `0001000248414645` | `00000001.app` |
+| Forecast Wii Menu banner (USA v7) | `0001000248414645` | `00000005.app` → `arc/banner.rso`; cited as `rso+<file offset>` |
 | News (USA v7) | `0001000248414745` | `00000001.app` |
 | Everybody Votes (USA v512) | `0001000248414A45` | `00000001.app` |
 | Check Mii Out (USA v512) | `0001000248415045` | `00000001.app`, `00000004.app` |
@@ -377,6 +378,32 @@ channel's method compares with proper astrology are in the write-up:
 [Today & Tomorrow Channel](https://gist.github.com/quatric/222008fe67167e8dcbda6b022b0f7551). A Python reimplementation of the maths is in
 [today-fortune](https://github.com/quatric/today-fortune).
 
+### `forecast/` — cross-checked against the channel's Wii Menu banner
+
+The live weather on the Forecast Channel's Wii Menu tile is drawn by a relocatable module,
+`arc/banner.rso` in content `00000005.app`, which keeps its full symbol table
+(`Banner::setup_ww_layout`, `Forecast::get_weather_now`, …). It is a second, independent
+reader of `forecast.bin`, `short.bin` and `savedata.dat`. Reading it alongside the channel
+corrected several things in the three forecast definitions:
+
+* **`short.bin` entries `+0x04`/`+0x08` are `local_timestamp`/`global_timestamp`**, not
+  opening/closing timestamps. Their difference is the city's UTC offset, and both readers
+  compute the city's clock as `utc_now + (local − global)`.
+* **The channel does render `short.bin`** (current condition and temperature in the city
+  view). It is not data for a Wii Menu "globe".
+* **`short.bin`'s `+0x0E` byte is read by nothing.** Both readers use only `+0x04`, `+0x0C`,
+  `+0x0F` and `+0x10`; the old "System Menu consumer" note is gone.
+* **`region_flag` sets the default units** (`1` → °F + mph, `0`/`2` → °C + km/h). It was
+  previously described as a console "region byte". The °F/°C polarity of the save's
+  `temperature_unit` is now pinned rather than inferred.
+* **`weather_icon_code_2` is the icon ID**: `1`–`33` Japanese, `101`–`126` international,
+  bit 15 = night (sun drawn as moon). It has new `icon_id` / `is_night` instances.
+* **`message_offset` replaces the forecast** with a ≤ 511-character service message on the
+  error screen, and skips all table validation.
+
+The full banner write-up, including its icon table and status codes, is §12 of the
+[Forecast Channel document](https://gist.github.com/quatric/23267cf80416303da28ef186551a88df).
+
 ## Constraints newly recorded
 
 Contracts a generator has to satisfy, now in `doc:` blocks instead of being folklore:
@@ -391,6 +418,12 @@ Contracts a generator has to satisfy, now in `doc:` blocks instead of being folk
   its codes are validated against `forecast.bin`'s (the console reads the count from
   `forecast.bin+0x30` while walking `short.bin`'s entries), so the pair must be generated
   together.
+* **`forecast/` header gates, both files** — `version`'s top 16 bits must be zero (status
+  `−3`, no re-download), `closing_timestamp` is an expiry (status `−2`, re-download; an
+  expired *download* is `FORE000006`), and `language_code` must equal the console's
+  language. Every `location_table` row must be referenced by a long, summary or `short.bin`
+  entry. The Wii Menu banner adds decompressed-size limits of `0x32000` (`forecast.bin`)
+  and `0x5000` (`short.bin`).
 * **`news/news_file.ksy`** — the full validator contract at `0x8000B1EC`: version high
   bits, the two boolean flags, the `0xFF`-terminated language list, `message_offset`
   alignment, and `offset + count * size <= filesize` plus 4-byte alignment for all five
@@ -419,10 +452,12 @@ Contracts a generator has to satisfy, now in `doc:` blocks instead of being folk
   and no payload has been observed.
 * **Forecast `location_zoom_2`** (`+0x15` of a Places entry) — bounds-checked to `<= 3` and
   then read by nothing. `location_zoom_1` is resolved (a 0..9 prominence rank; see
-  `forecast_file.ksy`), but this one has no consumer in the client at all.
+  `forecast_file.ksy`), but this one has no consumer in the channel or its Wii Menu banner.
 * **What the Forecast `attribute` byte at `+0x0C` of the long and summary entries *means*.**
   Its type, range and validators are now pinned (`u8`, `<= 5` or `0xFF`, rejects the file),
-  but nothing in this title reads it, so its semantics have to come from whatever does. A
+  but nothing in this title reads it. The channel's Wii Menu banner, the only other retail
+  reader of the file, does not read it either, so its semantics are not recoverable from
+  the client. A
   retail file gives it 1 for most cities, 5 for a few (Evansville, Gary, Bowling Green, El
   Paso), 4 for a few others (Brasília, Nuuk, Palikir), and 0xFF throughout on Japanese
   versions; a time-zone-ID theory (Nuuk sits in its own zone despite Denmark's country

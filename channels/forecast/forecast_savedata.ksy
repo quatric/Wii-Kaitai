@@ -13,6 +13,11 @@ doc: |
   It holds the chosen city and the two unit toggles - nothing else. Weather data
   itself is cached separately in Forecast.dat and wc24dl.vff.
 
+  The Wii Menu banner (00000005.app -> arc/banner.rso) reads this file too. It
+  takes the first data directory that exists among HAFJ, HAFE and HAFP, checks
+  only the CRC (rso+0x2550), and then uses location_key and temperature_unit. It
+  does not check the label or region_word.
+
   Validation, in the order the console applies it (loader at 0x8000BAD4):
 
     1. CRC-32 over bytes 0x00-0x1B compared against the trailer (0x8000BB84).
@@ -61,11 +66,18 @@ seq:
     enum: temp_unit
     doc: |
       Toggled at 0x80028714 with the cntlzw/srwi-5 logical-NOT idiom, so only
-      0 and 1 ever occur. Default comes from a region byte at 0x8000E0EC: one
-      branch writes (temperature, wind) = (1, 0), the other (0, 1).
+      0 and 1 ever occur.
 
-      The Fahrenheit/Celsius naming is inferred from that pairing with the
-      wind unit, whose polarity IS pinned by the binary - see wind_speed_unit.
+      Default, when there is no valid save, comes from forecast.bin's
+      region_flag (header +0x19), not a console region byte: FUN_8000E078 reads
+      it through the loaded file (`lwz r3, 0x28(r3)`; `lbz r0, 0x19(r3)` at
+      0x8000E0EC). region_flag 1 gives (temperature, wind) = (1, 0); 0 or 2 gives
+      (0, 1).
+
+      Polarity is now pinned by the channel's Wii Menu banner (banner.rso),
+      which reads this same field. 0 selects the Celsius bytes and shows the
+      `ondo_C` pane; non-zero selects the Fahrenheit bytes and shows `ondo_F`.
+      The banner reads only temperature_unit; it shows no wind.
   - id: wind_speed_unit
     type: u4
     enum: wind_unit

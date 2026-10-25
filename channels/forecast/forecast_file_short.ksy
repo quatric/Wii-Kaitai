@@ -2,30 +2,55 @@ meta:
   id: forecast_file_short
   application: Forecast Channel
   endian: be
-  doc: |
-    short.bin - the current-conditions file used by the Wii System Menu weather globe.
-    Header is 0x24 bytes; current_forecast_table entries are 0x18 bytes.
+doc: |
+  short.bin - the current-conditions file (Nintendo: WeatherNow).
+  Header is 0x24 bytes; current_forecast_table entries are 0x18 bytes.
 
-    This file carries NO weather-condition table of its own. Its current_forecast codes
-    are validated against the condition table inside the matching forecast.bin - the
-    console reads the count from forecast.bin+0x30 while walking short.bin's entries
-    (0x8000D130 in the USA v7 binary) - so the two files must be generated as a pair.
+  It has two retail readers, and both use exactly the same four entry fields:
+  local_timestamp, current_forecast, current_temperature_celsius and
+  current_temperature_fahrenheit.
+    * The channel itself shows the current condition and temperature in the city
+      view (FUN_800079A4, 0x80007D60-0x80007E04; FUN_8002322C; FUN_8000A764
+      index 2). Earlier notes said the channel only validates this file; that
+      was wrong.
+    * The channel's Wii Menu banner (00000005.app -> arc/banner.rso,
+      setup_ww_layout at rso+0x0FB0) draws the same data on the Wii Menu tile
+      outside Japan. There is no weather globe in the Wii Menu; the globe is
+      the channel's own.
 
-    current_wind_direction is validated as <= 16 or 0xFF (0x8000D190).
+  Storage: "4.bin" inside data/wc24dl.vff, LZ10-compressed (download ID 4,
+  hard-coded at 0x800327D4; polled every 30 minutes). The banner decompresses
+  into a 0x5000-byte buffer, so a decompressed short.bin over 20 KiB breaks the
+  Wii Menu tile.
+
+  Not validated at all when forecast.bin's message_offset is non-zero.
+
+  This file carries NO weather-condition table of its own. Its current_forecast codes
+  are validated against the condition table inside the matching forecast.bin - the
+  console reads the count from forecast.bin+0x30 while walking short.bin's entries
+  (0x8000D130 in the USA v7 binary) - so the two files must be generated as a pair.
+
+  current_wind_direction is validated as <= 16 or 0xFF (0x8000D190).
 seq:
   - id: version
     type: u4
-    doc: Always 0.
+    doc: Always 0. Top 16 bits non-zero is validator status -3 (0x8000D030), as for forecast.bin.
   - id: filesize
     type: u4
+    doc: Must equal the decompressed size.
   - id: crc32
     type: u4
+    doc: zlib CRC-32 over 0x0C..EOF (0x8000D05C).
   - id: opening_timestamp
     type: u4
-    doc: Timestamp is minutes since 2000.
+    doc: Timestamp is minutes since 2000 (UTC). No reader found.
   - id: closing_timestamp
     type: u4
-    doc: Timestamp is minutes since 2000.
+    doc: |
+      Timestamp is minutes since 2000 (UTC). Expiry: past it, the validator
+      returns -2 (0x8000D088) and the channel re-downloads. The banner also
+      refuses the file once it passes, outside Japan (rso+0x29A4). WiiLink writes
+      opening + 63, which tolerates two missed 30-minute polls.
   - id: country_code
     type: u1
     enum: country_code
@@ -36,10 +61,16 @@ seq:
   - id: language_code
     type: u1
     enum: language_code
+    doc: Must equal the console language byte (0x8000D090); also checked by the banner (rso+0x29C0).
   - id: unknown_2
     type: u1
+    doc: |
+      Same position as forecast.bin's region_flag; WiiLink calls it
+      TemperatureFlag and writes 0. Unlike forecast.bin's, it is neither
+      validated nor read.
   - id: unknown_3
     type: u1
+    doc: Same position as forecast.bin's unknown_2. Neither validated nor read.
   - id: padding
     type: u1
   - id: current_forecast_entry_number
@@ -62,35 +93,58 @@ types:
         type: u1
       - id: location_code
         type: u2
-      - id: opening_timestamp
+      - id: local_timestamp
         type: u4
-        doc: Timestamp is minutes since 2000.
-      - id: closing_timestamp
+        doc: |
+          Minutes since 2000, in the city's local time. Was misnamed
+          `opening_timestamp`; WiiLink's struct names it LocalTimestamp. Shown as
+          the "As of ..." time on the Wii Menu tile (rso+0x13A0) and read by the
+          channel (FUN_8002322C).
+      - id: global_timestamp
         type: u4
-        doc: Timestamp is minutes since 2000.
+        doc: |
+          The same instant in UTC (WiiLink: GlobalTimestamp). Was misnamed
+          `closing_timestamp`. No reader found in either binary.
       - id: current_forecast
         type: u2
+        doc: |
+          0xFFFF, or a weather_icon_code_1 present in forecast.bin's condition table
+          (validated at 0x8000D124). Read by both readers.
       - id: unknown
         type: u1
         doc: |
-          NOT padding. Validated by the Forecast Channel as ≤99 or 0xFF.
-          Its consumer is the Wii System Menu (weather globe), not the
-          Forecast Channel itself. Bound is 99, not 100 like precipitation.
+          NOT padding: validated by the channel as <= 99 or 0xFF (0x8000D178). The
+          bound is 99, not 100 like precipitation.
+
+          Read by nothing. The earlier note that its consumer is the Wii System
+          Menu is wrong. Both retail readers of this file, the channel and its Wii
+          Menu banner, read only +0x04, +0x0C, +0x0F and +0x10. An instruction-level
+          scan of the channel's game code for byte loads at displacement 0x0E finds
+          only this validator plus day-block and UI reads. Any in-range value is safe.
       - id: current_temperature_celsius
         type: s1
+        doc: |
+          -128 (0x80) shows `--` in the channel (`cmpwi r3, -128` at 0x80007DBC);
+          the banner shows `--` for anything below -99.
       - id: current_temperature_fahrenheit
         type: s1
+        doc: Same sentinel as current_temperature_celsius.
       - id: current_wind_direction
         type: u1
         enum: wind_direction
+        doc: Validated as <= 16 or 0xFF (0x8000D190). Displayed by neither reader.
       - id: current_wind_speed_kilometers_per_hour
         type: u1
+        doc: Displayed by neither reader.
       - id: current_wind_speed_miles_per_hour
         type: u1
+        doc: Displayed by neither reader.
       - id: unknown_1
         type: u2
+        doc: Never validated, never read.
       - id: unknown_2
         type: u2
+        doc: Never validated, never read. WiiLink writes 0xFFFF.
 enums:
   country_code:
     1: japan

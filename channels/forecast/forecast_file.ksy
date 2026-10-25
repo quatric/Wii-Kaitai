@@ -3,43 +3,85 @@ meta:
   file-extension: bin
   application: Forecast Channel
   endian: be
-  doc: |
-    forecast.bin - 0x58-byte header, then seven independently located tables.
+doc: |
+  forecast.bin - 0x58-byte header, then seven independently located tables.
 
-    Nintendo's own names for the tables, recovered from the validator string pool in
-    the retail binary (0x80199D10 onward) where they appear in header-field order:
-      message_offset          -> ERROR_MESSAGE_e
-      long_forecast_table     -> WeatherForecasts  (cities in the console's own country)
-      short_forecast_table    -> WeatherSummary    (cities elsewhere)
-      weather_condition_codes -> WeatherType
-      uv_index_table          -> UVIndex
-      laundry_index_table     -> LaundryIndex
-      pollen_count_table      -> PollenIndex
-      location_table          -> Places
+  Nintendo's own names for the tables, recovered from the validator string pool in
+  the retail binary (0x80199D10 onward) where they appear in header-field order:
+    message_offset          -> ERROR_MESSAGE_e
+    long_forecast_table     -> WeatherForecasts  (cities in the console's own country)
+    short_forecast_table    -> WeatherSummary    (cities elsewhere)
+    weather_condition_codes -> WeatherType
+    uv_index_table          -> UVIndex
+    laundry_index_table     -> LaundryIndex
+    pollen_count_table      -> PollenIndex
+    location_table          -> Places
 
-    WARNING: short_forecast_table is the international SUMMARY list inside THIS file.
-    It is not short.bin, which is a separate file whose table Nintendo calls WeatherNow
-    (see forecast_file_short.ksy). Conflating the two - usually by noticing that the
-    summary entry is 0x48 bytes and assuming that is short.bin's stride - is the most
-    common error in third-party documentation of this format.
+  WARNING: short_forecast_table is the international SUMMARY list inside THIS file.
+  It is not short.bin, which is a separate file whose table Nintendo calls WeatherNow
+  (see forecast_file_short.ksy). Conflating the two - usually by noticing that the
+  summary entry is 0x48 bytes and assuming that is short.bin's stride - is the most
+  common error in third-party documentation of this format.
 
-    Laundry and pollen indices are only validated when the console's region word
-    (r13-0x6A04) is zero, i.e. on Japanese consoles.
+  Laundry and pollen indices are only validated when the console's region word
+  (r13-0x6A04) is zero, i.e. on Japanese consoles.
+
+  Two retail readers parse this file: the channel (00000001.app, validator
+  FUN_8000C734) and the channel's Wii Menu banner module (00000005.app ->
+  arc/banner.rso, which keeps its symbols). Addresses written rso+0x... are file
+  offsets into banner.rso.
+
+  Storage: WiiConnect24 keeps this file LZ10-compressed as "3.bin" inside
+  data/wc24dl.vff. The download IDs 3 (forecast.bin) and 4 (short.bin) are
+  hard-coded at 0x800327CC/0x800327D4, and the task file name is
+  sprintf("%d.bin", id) (0x80035348). Both tasks poll every 30 minutes. The
+  banner decompresses into a 0x32000-byte buffer, so a decompressed forecast.bin
+  over 200 KiB breaks the Wii Menu tile.
+
+  The validator returns a status per file: 0 OK, -1 corrupt, -2 expired, -3
+  unsupported version. An expired cache is re-downloaded at once. A -3 goes
+  straight to the error screen. Any failure of a freshly downloaded file is
+  FORE000006.
+
+  Structural rules beyond the per-field ones documented below (all reject the
+  file):
+    * long_forecast_entry_number and short_forecast_entry_number are not both 0;
+      weather_condition_codes_entry_number and location_entry_number are not 0;
+      any non-zero count has a non-zero offset (FUN_8001FB94).
+    * weather_icon_code_1, each index code (UV/laundry/pollen) and each location
+      key are unique within their tables.
+    * Every location_table row is referenced by a long entry, a summary entry or
+      a short.bin entry (0x8000CF64). An unreferenced city rejects the file.
+    * Every text offset is < filesize and even.
 
 seq:
   - id: version
     type: u4
-    doc: Always 0.
+    doc: |
+      Always 0. The top 16 bits are a format-version gate: non-zero gives
+      validator status -3 (`clrrwi.` at 0x8000C8E4), and the channel goes to the
+      error screen without trying a re-download. The banner refuses it too
+      (rso+0x2908).
   - id: filesize
     type: u4
+    doc: Must equal the decompressed size.
   - id: crc32
     type: u4
+    doc: zlib CRC-32 over 0x0C..EOF (0x8000C90C).
   - id: opening_timestamp
     type: u4
-    doc: Timestamp is minutes since 2000.
+    doc: |
+      Timestamp is minutes since 2000 (UTC). No reader found in the channel or
+      the banner.
   - id: closing_timestamp
     type: u4
-    doc: Timestamp is minutes since 2000.
+    doc: |
+      Timestamp is minutes since 2000 (UTC). An expiry: once UTC now passes it,
+      the validator returns -2 (0x8000C95C). The channel then discards its cache
+      and re-downloads; an expired *download* is FORE000006. The banner shows its
+      "Unable to obtain the latest forecast update" message (rso+0x2924). WiiLink
+      writes opening + 90; WiiConnect24 polls every 30 minutes, so that tolerates
+      two missed polls.
   - id: country_code
     type: u1
     enum: country_code
@@ -54,20 +96,39 @@ seq:
   - id: language_code
     type: u1
     enum: language_code
+    doc: |
+      Must equal the console language byte (r13-0x6A0A, compared at 0x8000C964).
+      A mismatch is status -1 (FORE000006 for a fresh download), and the banner
+      blanks too (rso+0x2938). Servers have to serve one file per language.
   - id: region_flag
     type: u1
     enum: region_flag
+    doc: |
+      Validated as <= 2. Sets the default units when there is no valid save
+      (FUN_8000E078, `lbz r0, 0x19(r3)` at 0x8000E0EC): 1 -> Fahrenheit + mph,
+      0 or 2 -> Celsius + km/h. See forecast_savedata.ksy.
   - id: unknown_2
     type: u1
     doc: |
-      Validated at 0x8000C9C8 as `<= 1` (boolean). Validated but never acted on -
-      searching every direct-displacement byte load of this offset across the binary
-      finds only the bounds check, no consumer. WiiLink writes 1; 0 is equally legal.
+      Validated at 0x8000C9C8 as `<= 1` (boolean). Validated but never acted on.
+      An instruction-level scan of the channel's game code finds eight
+      `lbz ..., 26(rN)` loads. This is the only one on the header; the rest are
+      day-block bytes, a video-mode struct and graphics code. The banner does not
+      read it either. WiiLink writes 1; 0 is equally legal.
   - id: padding
     type: u1
   - id: message_offset
     type: u4
-    doc: If this is set, it will display a message at start.
+    doc: |
+      Offset of a UTF-16BE service message, or 0. Must be < filesize and even
+      (0x8000C978). When non-zero, the forecast is replaced by the message:
+        * the validator skips every table check, and skips short.bin entirely;
+        * the channel goes to the error screen and prints the string in
+          error0.brlyt's `error_server` pane (FUN_8000B46C);
+        * the NUL must come within 0x200 code units (`cmpwi r3, 512` at
+          0x8000B19C), so the text is at most 511 characters. A longer or
+          unterminated string shows FORE000006 instead;
+        * the Wii Menu banner shows its "unable to obtain" message (rso+0x29D8).
   - id: long_forecast_entry_number
     type: u4
   - id: long_forecast_table_offset
@@ -144,17 +205,27 @@ types:
         type: u2
       - id: local_timestamp
         type: u4
-        doc: Timestamp is minutes since 2000.
+        doc: |
+          Minutes since 2000, in the city's local time: the forecast's issue time.
+          The banner prints it as "As of ..." / "%d日 %d時発表", and uses its day of
+          month as the date of the today block.
       - id: global_timestamp
         type: u4
-        doc: Timestamp is minutes since 2000.
+        doc: |
+          The same instant in UTC. local_timestamp - global_timestamp is the
+          city's UTC offset in minutes. Both readers compute the city's clock as
+          `utc_now + (local_timestamp - global_timestamp)`: the channel in
+          FUN_8002054C (0x80020558), the banner at rso+0x2A70.
       - id: timezone_tag
         type: u1
         doc: |
           Validated as `<= 5, or exactly 0xFF` (0x8000cb00), one byte via `lbz` -
           NOT the u32 generators often declare here. Never read anywhere else, so
-          it has no visible effect on the displayed forecast; its only consumer is
-          outside this title.
+          it has no visible effect on the displayed forecast. The Wii Menu banner
+          (banner.rso), the one other retail reader of this file, does not read it
+          either. Of the channel's fourteen `lbz ..., 12(rN)` loads, two are these
+          validators and two read the day block's low Celsius byte; the rest are
+          UI objects.
 
           Nintendo's retail values: 1 for most cities, 5 for a few (Evansville,
           Gary, Bowling Green, El Paso), 4 for others (Brasília, Nuuk, Palikir),
@@ -180,7 +251,10 @@ types:
         type: s1
       - id: today_high_temperature_celsius_difference
         type: s1
-        doc: Only used for the Japanese version of this Channel.
+        doc: |
+          Only used for the Japanese version of this Channel. Change from the
+          previous day's high, by the banner's pane name `kion_zen` (前日比). The
+          Japanese tile shows it signed in place of the low (rso+0x0940).
       - id: today_low_temperature_celsius
         type: s1
       - id: today_low_temperature_celsius_difference
@@ -560,10 +634,28 @@ types:
     seq:
       - id: weather_icon_code_1
         type: u2
+        doc: |
+          Lookup key. Every forecast code in the other tables, and short.bin's
+          current_forecast, is matched against this field. Must be unique.
+          A code whose low 15 bits are 999 or 0x7FFF means "no weather".
       - id: weather_icon_code_2
         type: u2
+        doc: |
+          Icon ID, in the low 15 bits: 1-33 are the Japanese icon set, 101-126 the
+          international one (banner mark_tab, 59 entries, rso+0x3060). Bit 15 is a
+          night flag: the banner draws W_sun_00 as W_moon_00 (strcmp at
+          rso+0x152C). WiiLink's night conditions set it (Clear = 0x8065).
       - id: weather_text_offset
         type: u4
+        doc: |
+          UTF-16BE condition name, the banner's `telop` caption. Must be non-zero
+          (FUN_80028A50), < filesize and even. The banner gives up after 96
+          characters.
+    instances:
+      icon_id:
+        value: weather_icon_code_2 & 0x7fff
+      is_night:
+        value: (weather_icon_code_2 & 0x8000) != 0
   uv_index_table:
     seq:
       - id: uv_index_code
@@ -611,10 +703,13 @@ types:
         type: u2
       - id: city_text_offset
         type: u4
+        doc: Must be < filesize and even; used as-is, so point it at a real string.
       - id: region_text_offset
         type: u4
+        doc: 0 means none (FUN_80027D3C stores it only when non-zero). Otherwise < filesize and even.
       - id: country_text_offset
         type: u4
+        doc: 0 means none, as for region_text_offset.
       - id: latitude_coordinates
         type: u2
       - id: longitude_coordinates
