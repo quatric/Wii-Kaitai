@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- jaudiobaa, jaudio_aaf, krvglc, ktss, lclpool, lngtab, lracp, lyse, lmxbdb
 - scumm_he, i3ds, idsp_ie, ifp_anct, igor_fbin, igor_chkf, igz, imaginewa2, imaginewsn, ish_isd
 - gcaxmpb, gcub, gfx, gmf2, gno, gsnd, gsr, gvx, hbmmbd
 - eabnk, ealoc, eamus, eashpg, eatext, eqimgset, ertmvox, ertm_resource, faafz, fbnd, fcmpftex
