@@ -3,20 +3,20 @@ meta:
   file-extension: bin
   application: Everybody Votes Channel
   endian: be
-  doc: |
-    voting.bin - the poll pack, parsed by the channel's pack decoder.
+doc: |
+  voting.bin - the poll pack, parsed by the channel's pack decoder.
 
-    This header is PACKED, not naturally aligned. The u4 table offsets at 0x15, 0x1A,
-    0x1F, 0x2A, 0x35, 0x3B and 0x41 all sit on odd addresses and the console reads them
-    with unaligned 32-bit loads. Do not insert alignment padding when generating.
+  This header is PACKED, not naturally aligned. The u4 table offsets at 0x15, 0x1A,
+  0x1F, 0x2A, 0x35, 0x3B and 0x41 all sit on odd addresses and the console reads them
+  with unaligned 32-bit loads. Do not insert alignment padding when generating.
 
-    Size bounds: 0x45 < filesize <= 0x10000. The header's last field starts at 0x41 and
-    is four bytes wide, so the structure ends at 0x45 - which is exactly the constant
-    the parser compares against.
+  Size bounds: 0x45 < filesize <= 0x10000. The header's last field starts at 0x41 and
+  is four bytes wide, so the structure ends at 0x45 - which is exactly the constant
+  the parser compares against.
 
-    CRC32 covers [0x0C, filesize). All nine table offsets must be < filesize.
-    Question timestamps must fall in [0x382F20, 0x120EB20] minutes since 2000-01-01,
-    i.e. 2007-01-01 .. 2036-01-01; one out-of-range poll rejects the entire pack.
+  CRC32 covers [0x0C, filesize). All nine table offsets must be < filesize.
+  Question timestamps must fall in [0x382F20, 0x120EB20] minutes since 2000-01-01,
+  i.e. 2007-01-01 .. 2036-01-01; one out-of-range poll rejects the entire pack.
 seq:
   - id: version
     type: u4

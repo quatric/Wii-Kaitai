@@ -2,25 +2,25 @@ meta:
   id: news_file
   application: News Channel
   endian: be
-  doc: |
-    news.bin - 0x68-byte header, then six tables.
 
-    Contract enforced by the console's validator:
-      * version's high 16 bits must be zero
-      * goo_flag and language_select_screen_flag must each be < 2
-      * language_list is scanned for the first 0xFF; that index must be < 16, and every
-        entry before it must be a valid language code (< 7)
-      * message_offset must be < filesize and 2-byte aligned (it points at UTF-16)
-      * for topics, articles, source, locations and pictures:
-        offset + count * entry_size <= filesize, and offset must be 4-byte aligned
-      * those entry sizes are 0x0C, 0x2C, 0x1C, 0x10 and 0x18 respectively
-      * updated_timestamp_2 is compared against now + 1440 minutes
+doc: |
+  news.bin - 0x68-byte header, then six tables.
 
-    The Wii Menu headlines table is NOT checked by that validator.
+  Contract enforced by the console's validator:
+    * version's high 16 bits must be zero
+    * goo_flag and language_select_screen_flag must each be < 2
+    * language_list is scanned for the first 0xFF; that index must be < 16, and every
+      entry before it must be a valid language code (< 7)
+    * message_offset must be < filesize and 2-byte aligned (it points at UTF-16)
+    * for topics, articles, source, locations and pictures:
+      offset + count * entry_size <= filesize, and offset must be 4-byte aligned
+    * those entry sizes are 0x0C, 0x2C, 0x1C, 0x10 and 0x18 respectively
+    * updated_timestamp_2 is compared against now + 1440 minutes
 
-    The console holds 24 of these files - one per hour - and revalidates the whole set
-    on every pass, so a single bad hour takes all of them down.
+  The Wii Menu headlines table is NOT checked by that validator.
 
+  The console holds 24 of these files - one per hour - and revalidates the whole set
+  on every pass, so a single bad hour takes all of them down.
 seq:
   - id: version
     type: u4

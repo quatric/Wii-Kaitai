@@ -1,27 +1,27 @@
 meta:
   id: ninch_dllist
-  doc: |
-    Nintendo Channel Master Catalog (v6). Big-endian, UTF-16BE strings.
-    CRC32 is standard reflected CRC32 over the file with bytes 0x08-0x0B zeroed.
-
-    The header is 0x5EA bytes, NOT 0x95. Bytes 0x25..0xA4 are a uniform directory of
-    SIXTEEN (count, offset) pairs with no gaps; 0xA5 begins last_update, 0xE6 the
-    1280-byte dl_url_ids block, and the header ends at 0x5EA.
-
-    Proven by the console's validator, which
-    applies the same test to all sixteen pairs: if either word is non-zero, the offset
-    must satisfy 0x5EA <= offset <= 0x1FC7CE. That 0x5EA lower bound is what pins the
-    header size, and it matches the first table's offset in real catalogs exactly.
-    The validator also requires version >= 6, the leading u2 to be zero, and filesize
-    to fall in the same 0x5EA .. 0x1FC7CE range.
-
-    Four of the sixteen slots (0x65, 0x75, 0x7D, 0x8D) are validated as table pointers
-    but populated by no known generator; they appear below as unknown_5/6, unknown_7
-    and unknown_8. They are directory slots, not padding.
   file-extension:
     - bin
     - LZ
   endian: be
+doc: |
+  Nintendo Channel Master Catalog (v6). Big-endian, UTF-16BE strings.
+  CRC32 is standard reflected CRC32 over the file with bytes 0x08-0x0B zeroed.
+
+  The header is 0x5EA bytes, NOT 0x95. Bytes 0x25..0xA4 are a uniform directory of
+  SIXTEEN (count, offset) pairs with no gaps; 0xA5 begins last_update, 0xE6 the
+  1280-byte dl_url_ids block, and the header ends at 0x5EA.
+
+  Proven by the console's validator, which
+  applies the same test to all sixteen pairs: if either word is non-zero, the offset
+  must satisfy 0x5EA <= offset <= 0x1FC7CE. That 0x5EA lower bound is what pins the
+  header size, and it matches the first table's offset in real catalogs exactly.
+  The validator also requires version >= 6, the leading u2 to be zero, and filesize
+  to fall in the same 0x5EA .. 0x1FC7CE range.
+
+  Four of the sixteen slots (0x65, 0x75, 0x7D, 0x8D) are validated as table pointers
+  but populated by no known generator; they appear below as unknown_5/6, unknown_7
+  and unknown_8. They are directory slots, not padding.
 seq:
   - id: unknown
     type: u2
