@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- mact, mee, mhsrt, midway_txt, momotex, monstersong, mthpstill, muranms, musx, musyx
 - jaudiobaa, jaudio_aaf, krvglc, ktss, lclpool, lngtab, lracp, lyse, lmxbdb
 - scumm_he, i3ds, idsp_ie, ifp_anct, igor_fbin, igor_chkf, igz, imaginewa2, imaginewsn, ish_isd
 - gcaxmpb, gcub, gfx, gmf2, gno, gsnd, gsr, gvx, hbmmbd
