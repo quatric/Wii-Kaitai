@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- sedb, criware/utf (generic @UTF table for AAX / CSB / ACB)
 - No definition (converter/decoder-only or no stable byte layout in nintoolbox): aiffwav, msimawav, hca, midi_render, mp2k, nxtext, wii_text_manifests, raw5a3, lcmpcm, rsf_g721, sega_melt, lzmabrtex, phive, bphcl, baev, rhgroove, nup, mph, pikmin_mod/jam/seq/teki, granny, sedb, parc, cvm, dbreg, spbspeech, mh2_strmanim, murafcmp, mssbnk, proteus_ast, petvet_wii, basaraui, ailive_lmc, cod_geom, glacier_mat, kromemdl, redspark, dspwrap, ealayer3, ertmaud, ertmtex, aax, cricsb, capcomarc, dcw, sega_grd, igor_ggm/nav/xga (covered by igor_chkf)
 - eaattrib, eaxa, eatpcm, imaginewiz, gwb
 - ai00, ascsyn, avdict, btd, octowt, petzozzy, kss_wave, pikmin_blo, rifx, rw_clump, scribvec, mibdsp
