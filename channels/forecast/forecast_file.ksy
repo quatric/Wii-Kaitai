@@ -183,7 +183,7 @@ instances:
     type: laundry_index_table
     repeat: expr
     repeat-expr: laundry_index_entry_number
-  pollen_country_table:
+  pollen_count_table:
     pos: pollen_count_table_offset
     type: pollen_count_table
     repeat: expr
@@ -237,246 +237,17 @@ types:
       - id: timezone_tag_reserved
         size: 3
         doc: Unread padding after `timezone_tag`; a u32 write here misses the byte actually checked.
-      - id: today_forecast
-        type: u2
-      - id: today_6_hour_forecast_12am_6am
-        type: u2
-      - id: today_6_hour_forecast_6am_12pm
-        type: u2
-      - id: today_6_hour_forecast_12pm_6pm
-        type: u2
-      - id: today_6_hour_forecast_6pm_12am
-        type: u2
-      - id: today_high_temperature_celsius
-        type: s1
-      - id: today_high_temperature_celsius_difference
-        type: s1
+      - id: today
+        type: day_block
+      - id: tomorrow
+        type: day_block
+      - id: week
+        type: week_day
+        repeat: expr
+        repeat-expr: 7
         doc: |
-          Only used for the Japanese version of this Channel. Change from the
-          previous day's high, by the banner's pane name `kion_zen` (前日比). The
-          Japanese tile shows it signed in place of the low (rso+0x0940).
-      - id: today_low_temperature_celsius
-        type: s1
-      - id: today_low_temperature_celsius_difference
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: today_high_temperature_fahrenheit
-        type: s1
-      - id: today_high_temperature_fahrenheit_difference
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: today_low_temperature_fahrenheit
-        type: s1
-      - id: today_low_temperature_fahrenheit_difference
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: today_6_hour_precipitation_12am_6am
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: today_6_hour_precipitation_6am_12pm
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: today_6_hour_precipitation_12pm_6pm
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: today_6_hour_precipitation_6pm_12am
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: today_wind_direction
-        type: u1
-        enum: wind_direction
-      - id: today_wind_speed_kilometers_per_hour
-        type: u1
-      - id: today_wind_speed_miles_per_hour
-        type: u1
-      - id: today_uv_index
-        type: u1
-      - id: today_laundry_index
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: today_pollen_count
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_forecast
-        type: u2
-      - id: tomorrow_6_hour_forecast_12am_6am
-        type: u2
-      - id: tomorrow_6_hour_forecast_6am_12pm
-        type: u2
-      - id: tomorrow_6_hour_forecast_12pm_6pm
-        type: u2
-      - id: tomorrow_6_hour_forecast_6pm_12am
-        type: u2
-      - id: tomorrow_high_temperature_celsius
-        type: s1
-      - id: tomorrow_high_temperature_celsius_difference
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_low_temperature_celsius
-        type: s1
-      - id: tomorrow_low_temperature_celsius_difference
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_high_temperature_fahrenheit
-        type: s1
-      - id: tomorrow_high_temperature_fahrenheit_difference
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_low_temperature_fahrenheit
-        type: s1
-      - id: tomorrow_low_temperature_fahrenheit_difference
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_6_hour_precipitation_12am_6am
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_6_hour_precipitation_6am_12pm
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_6_hour_precipitation_12pm_6pm
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_6_hour_precipitation_6pm_12am
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_wind_direction
-        type: u1
-        enum: wind_direction
-      - id: tomorrow_wind_speed_kilometers_per_hour
-        type: u1
-      - id: tomorrow_wind_speed_miles_per_hour
-        type: u1
-      - id: tomorrow_uv_index
-        type: u1
-        doc: Unused.
-      - id: tomorrow_laundry_index
-        type: u1
-        doc: Only used for the Japanese version of this Channel. Unused.
-      - id: tomorrow_pollen_count
-        type: u1
-        doc: Only used for the Japanese version of this Channel. Unused.
-      - id: five_day_forecast_day_1
-        type: u2
-      - id: five_day_forecast_day_1_temperature_celsius_high
-        type: s1
-      - id: five_day_forecast_day_1_temperature_celsius_low
-        type: s1
-      - id: five_day_forecast_day_1_temperature_fahrenheit_high
-        type: s1
-      - id: five_day_forecast_day_1_temperature_fahrenheit_low
-        type: s1
-      - id: five_day_forecast_day_1_precipitation
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: five_day_forecast_day_1_padding
-        type: u1
-        doc: Never validated, never read anywhere in the binary. Genuine padding.
-      - id: five_day_forecast_day_2
-        type: u2
-      - id: five_day_forecast_day_2_temperature_celsius_high
-        type: s1
-      - id: five_day_forecast_day_2_temperature_celsius_low
-        type: s1
-      - id: five_day_forecast_day_2_temperature_fahrenheit_high
-        type: s1
-      - id: five_day_forecast_day_2_temperature_fahrenheit_low
-        type: s1
-      - id: five_day_forecast_day_2_precipitation
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: five_day_forecast_day_2_padding
-        type: u1
-        doc: Never validated, never read anywhere in the binary. Genuine padding.
-      - id: five_day_forecast_day_3
-        type: u2
-      - id: five_day_forecast_day_3_temperature_celsius_high
-        type: s1
-      - id: five_day_forecast_day_3_temperature_celsius_low
-        type: s1
-      - id: five_day_forecast_day_3_temperature_fahrenheit_high
-        type: s1
-      - id: five_day_forecast_day_3_temperature_fahrenheit_low
-        type: s1
-      - id: five_day_forecast_day_3_precipitation
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: five_day_forecast_day_3_padding
-        type: u1
-        doc: Never validated, never read anywhere in the binary. Genuine padding.
-      - id: five_day_forecast_day_4
-        type: u2
-      - id: five_day_forecast_day_4_temperature_celsius_high
-        type: s1
-      - id: five_day_forecast_day_4_temperature_celsius_low
-        type: s1
-      - id: five_day_forecast_day_4_temperature_fahrenheit_high
-        type: s1
-      - id: five_day_forecast_day_4_temperature_fahrenheit_low
-        type: s1
-      - id: five_day_forecast_day_4_precipitation
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: five_day_forecast_day_4_padding
-        type: u1
-        doc: Never validated, never read anywhere in the binary. Genuine padding.
-      - id: five_day_forecast_day_5
-        type: u2
-      - id: five_day_forecast_day_5_temperature_celsius_high
-        type: s1
-      - id: five_day_forecast_day_5_temperature_celsius_low
-        type: s1
-      - id: five_day_forecast_day_5_temperature_fahrenheit_high
-        type: s1
-      - id: five_day_forecast_day_5_temperature_fahrenheit_low
-        type: s1
-      - id: five_day_forecast_day_5_precipitation
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: five_day_forecast_day_5_padding
-        type: u1
-        doc: Never validated, never read anywhere in the binary. Genuine padding.
-      - id: five_day_forecast_day_6
-        type: u2
-        doc: Only used for the Japanese version of this Channel.
-      - id: five_day_forecast_day_6_temperature_celsius_high
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: five_day_forecast_day_6_temperature_celsius_low
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: five_day_forecast_day_6_temperature_fahrenheit_high
-        type: s1
-        doc: Only used for the Japanese version of this Channel
-      - id: five_day_forecast_day_6_temperature_fahrenheit_low
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: five_day_forecast_day_6_precipitation
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: five_day_forecast_day_6_padding
-        type: u1
-        doc: Never validated, never read anywhere in the binary. Genuine padding.
-      - id: five_day_forecast_day_7
-        type: u2
-        doc: Only used for the Japanese version of this Channel.
-      - id: five_day_forecast_day_7_temperature_celsius_high
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: five_day_forecast_day_7_temperature_celsius_low
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: five_day_forecast_day_7_temperature_fahrenheit_high
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: five_day_forecast_day_7_temperature_fahrenheit_low
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: five_day_forecast_day_7_precipitation
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: five_day_forecast_day_7_padding
-        type: u1
-        doc: Never validated, never read anywhere in the binary. Genuine padding.
+          The seven-day outlook, starting the day after tomorrow. Days 6 and 7 are
+          only used for the Japanese version of this Channel.
   short_forecast_table:
     seq:
       - id: country_code
@@ -500,136 +271,109 @@ types:
           nowhere else.
       - id: timezone_tag_reserved
         size: 3
-      - id: today_forecast
+      - id: today
+        type: day_block
+        doc: |
+          Unlike the long table, the `uv_index`, `laundry_index` and `pollen_count`
+          bytes of the two blocks in this entry are validated (see `day_block`) but
+          never displayed.
+      - id: tomorrow
+        type: day_block
+  day_block:
+    doc: |
+      One day of forecast, 0x1C bytes. Used twice in every `long_forecast_table`
+      and `short_forecast_table` entry: first for today, then for tomorrow.
+      Nintendo's own name for the table that holds them is WeatherForecasts
+      (long) / WeatherSummary (short).
+    seq:
+      - id: forecast
         type: u2
-      - id: today_6_hour_forecast_12am_6am
+        doc: Weather code. Looked up in `weather_condition_codes_table`.
+      - id: six_hour_forecast
         type: u2
-      - id: today_6_hour_forecast_6am_12pm
-        type: u2
-      - id: today_6_hour_forecast_12pm_6pm
-        type: u2
-      - id: today_6_hour_forecast_6pm_12am
-        type: u2
-      - id: today_high_temperature_celsius
+        repeat: expr
+        repeat-expr: 4
+        doc: |
+          Weather codes for 12am-6am, 6am-12pm, 12pm-6pm and 6pm-12am, in that order.
+      - id: high_celsius
         type: s1
-      - id: today_high_temperature_celsius_difference
+      - id: high_celsius_difference
+        type: s1
+        doc: |
+          Only used for the Japanese version of this Channel. Change from the
+          previous day's high, by the banner's pane name `kion_zen` (前日比). The
+          Japanese tile shows it signed in place of the low (rso+0x0940).
+      - id: low_celsius
+        type: s1
+      - id: low_celsius_difference
         type: s1
         doc: Only used for the Japanese version of this Channel.
-      - id: today_low_temperature_celsius
+      - id: high_fahrenheit
         type: s1
-      - id: today_low_temperature_celsius_difference
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: today_high_temperature_fahrenheit
-        type: s1
-      - id: today_high_temperature_fahrenheit_difference
+      - id: high_fahrenheit_difference
         type: s1
         doc: Only used for the Japanese version of this Channel.
-      - id: today_low_temperature_fahrenheit
+      - id: low_fahrenheit
         type: s1
-      - id: today_low_temperature_fahrenheit_difference
+      - id: low_fahrenheit_difference
         type: s1
         doc: Only used for the Japanese version of this Channel.
-      - id: today_6_hour_precipitation_12am_6am
+      - id: six_hour_precipitation
         type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: today_6_hour_precipitation_6am_12pm
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: today_6_hour_precipitation_12pm_6pm
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: today_6_hour_precipitation_6pm_12am
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: today_wind_direction
+        repeat: expr
+        repeat-expr: 4
+        doc: |
+          Only used for the Japanese version of this Channel. Chance of
+          precipitation for 12am-6am, 6am-12pm, 12pm-6pm and 6pm-12am, in that order.
+      - id: wind_direction
         type: u1
         enum: wind_direction
-      - id: today_wind_speed_kilometers_per_hour
+      - id: wind_speed_kilometers_per_hour
         type: u1
-      - id: today_wind_speed_miles_per_hour
+      - id: wind_speed_miles_per_hour
         type: u1
-      - id: today_uv_index
-        type: u1
-        doc: |
-          Not simple padding: `FUN_8000d1ec` (0x8000d1ec) validates it exactly like
-          `long_forecast_table`'s `today_uv_index` - must be `0xFF` or exist in
-          `uv_index_table`. Never displayed by this title; short_forecast_table
-          entries (international summary cities) don't get a UV row.
-      - id: today_laundry_index
+      - id: uv_index
         type: u1
         doc: |
-          Same validator, Japan-only branch: checked against `laundry_index_table`
-          only when the console region is Japan, exactly like the long table's
-          `today_laundry_index`. Unused in the short-entry display path.
-      - id: today_pollen_count
+          Validated by `FUN_8000d1ec` (0x8000d1ec), once per block: must be `0xFF` or
+          exist in `uv_index_table`.
+          Long entries: today's value is shown; tomorrow's is unused.
+          Short entries: never displayed - international summary cities get no UV
+          row - so it is validated but otherwise unused.
+          (In short entries the tomorrow fields were once misnamed `today_*`; they
+          sit right after the tomorrow block's wind bytes.)
+      - id: laundry_index
         type: u1
         doc: |
-          Same validator, Japan-only branch: checked against `pollen_count_table`
-          only when the console region is Japan, exactly like the long table's
-          `today_pollen_count`. Unused in the short-entry display path.
-      - id: tomorrow_forecast
-        type: u2
-      - id: tomorrow_6_hour_forecast_12am_6am
-        type: u2
-      - id: tomorrow_6_hour_forecast_6am_12pm
-        type: u2
-      - id: tomorrow_6_hour_forecast_12pm_6pm
-        type: u2
-      - id: tomorrow_6_hour_forecast_6pm_12am
-        type: u2
-      - id: tomorrow_high_temperature_celsius
-        type: s1
-      - id: tomorrow_high_temperature_celsius_difference
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_low_temperature_celsius
-        type: s1
-      - id: tomorrow_low_temperature_celsius_difference
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_high_temperature_fahrenheit
-        type: s1
-      - id: tomorrow_high_temperature_fahrenheit_difference
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_low_temperature_fahrenheit
-        type: s1
-      - id: tomorrow_low_temperature_fahrenheit_difference
-        type: s1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_6_hour_precipitation_12am_6am
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_6_hour_precipitation_6am_12pm
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_6_hour_precipitation_12pm_6pm
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_6_hour_precipitation_6pm_12am
-        type: u1
-        doc: Only used for the Japanese version of this Channel.
-      - id: tomorrow_wind_direction
-        type: u1
-        enum: wind_direction
-      - id: tomorrow_wind_speed_kilometers_per_hour
-        type: u1
-      - id: tomorrow_wind_speed_miles_per_hour
-        type: u1
-      - id: tomorrow_uv_index
+          Only used for the Japanese version of this Channel. Checked against
+          `laundry_index_table` only when the console region is Japan. Unused for
+          tomorrow, and in the short-entry display path.
+      - id: pollen_count
         type: u1
         doc: |
-          Was misnamed `today_uv_index` - it sits right after
-          `tomorrow_wind_speed_miles_per_hour`, in the *tomorrow* 0x1C-byte block that
-          `FUN_8000d1ec` validates on its second pass over this entry (0x8000d1ec).
-          Same rule as `today_uv_index` above: `0xFF` or exists in `uv_index_table`.
-      - id: tomorrow_laundry_index
+          Only used for the Japanese version of this Channel. Checked against
+          `pollen_count_table` only when the console region is Japan. Unused for
+          tomorrow, and in the short-entry display path.
+  week_day:
+    doc: One day of the seven-day outlook, 8 bytes. Seven of these end every long entry.
+    seq:
+      - id: forecast
+        type: u2
+        doc: Weather code. Looked up in `weather_condition_codes_table`.
+      - id: high_celsius
+        type: s1
+      - id: low_celsius
+        type: s1
+      - id: high_fahrenheit
+        type: s1
+      - id: low_fahrenheit
+        type: s1
+      - id: precipitation
         type: u1
-        doc: Was misnamed `today_laundry_index`; tomorrow-block equivalent of `today_laundry_index`, Japan-only.
-      - id: tomorrow_pollen_count
+        doc: Only used for the Japanese version of this Channel.
+      - id: padding
         type: u1
-        doc: Was misnamed `today_pollen_count`; tomorrow-block equivalent of `today_pollen_count`, Japan-only.
+        doc: Never validated, never read anywhere in the binary. Genuine padding.
   weather_condition_codes_table:
     seq:
       - id: weather_icon_code_1
