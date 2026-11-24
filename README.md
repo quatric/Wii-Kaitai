@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- acbivt, ads_midway, afbfsb, agsc, apkf, apx, asurasfx, avdbl, batman_fmsb, bmsgtext, bobmp3, btftex, btxdlg, bwav, caf, capcaps
 - pikmin_bx, pikmin_key, pikmin_pcr, glacier_gms, glacier_loc, glacier_prm, glacier_prp, glacier_whd, mh2_anim, mh2_col, mh2_grf, mh2_inst, mh2_wrld
 - sega_res, sega_hmot, sega_hspr, sega_gro3, toshi_loc, toshi_text, toshi_trz, toshi_tso, torquedso, tim2, tlibtext
 - txag, txg, uber, usm, vag, vetdata_edf, vt_worldtour, vtanim, wiiarcimg, wscshot, wtxid, sonic_gncp, sega_abda, sega_ghsl
