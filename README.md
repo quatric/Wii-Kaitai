@@ -82,6 +82,8 @@ World), `kp0_pkt` (Power Punch) and `midway_wad` (TNA Impact!), `heatseeker_ffs`
 `iarc` (Benjamin Blumchen),
 `neko_grp`, `okami_dat`, `omom` (Monster Hunter 3), `nlg_zlib`, `coresoft_nwtx` and `sting_pah`
 (Dokapon Kingdom).
+Another batch adds `genki_lxhd` + `genki_lxmf` (Spectrobes: Origins), `marvelous_pbin`
+(Harvest Moon: Animal Parade), `lllws_tpc` and `hbm` (Home Button Menu data).
 
 Where nintoolbox only detects a container and does not document its inner chunks
 (Procyon SWD/SMD, Camelot MDLR, Capcom MODS/GML1), the definition covers the header and
