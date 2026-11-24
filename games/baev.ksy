@@ -24,16 +24,21 @@ seq:
     type: u4
   - id: alignment
     type: u4
-  - id: sections
+  - id: section_headers
     type: section_header
-    repeat: expr
-    repeat-expr: 2
   - id: container_ptr
     type: u8
   - id: type_name
     size: 0x80
     type: strz
     encoding: ASCII
+instances:
+  bfsi_sections:
+    pos: section_headers.offset
+    type: bfsi
+    repeat: expr
+    repeat-expr: section_headers.count
+    doc: '"Default" and "StringPool"; checked against tomodachi_demo.baev (offset 168, count 2, size 40).'
 types:
   section_header:
     seq:
