@@ -75,6 +75,9 @@ A follow-up batch (2026-10-08) adds, in `games/`: `zoe_hvp`, `namco_nub`, `pda_b
 `ea_shoc`, `dc2_dcm` and `fakt_fast`; `iga` now also covers version 2 and chunked-LZMA
 members.
 
+A further batch (2026-11-23) adds, in `games/`: `ipck` (Tales of Symphonia: Dawn of the New
+World), `kp0_pkt` (Power Punch) and `midway_wad` (TNA Impact!).
+
 Where nintoolbox only detects a container and does not document its inner chunks
 (Procyon SWD/SMD, Camelot MDLR, Capcom MODS/GML1), the definition covers the header and
 leaves the chunk bodies as raw bytes rather than guessing. `BUG\0` Jade files, encrypted
