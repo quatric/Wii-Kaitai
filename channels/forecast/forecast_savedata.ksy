@@ -27,15 +27,21 @@ seq:
   - id: region_word
     type: u4
     doc: |
-      The console's region when the file was saved. The top byte is the country
-      code (see `console_country_code`). If it doesn't match the console now, the
-      saved city is ignored.
+      The console's country when the file was saved. Only the top byte is used:
+      it is the console's country code (see `console_country_code`) and the other
+      three bytes are always 0. If it doesn't match the console now, the saved
+      city is ignored.
+
+      If the console has no country set, the channel makes one up from the
+      console's region: Japan/Taiwan consoles get 0x01 (Japan), Europe/Australia/
+      South Africa consoles get 0x4E (Germany), and everything else (USA, Korea,
+      etc.) gets 0x31 (United States).
   - id: location_key
     type: location_key
     doc: |
       The city you picked. Matches the key at the start of the entries in
-      forecast.bin and short.bin. With no save, this is just the console's region
-      word, so a new console starts on the country instead of a city.
+      forecast.bin and short.bin. With no save, this is just the region word, so
+      a new console starts on its country instead of a city (`is_country_only`).
   - id: temperature_unit
     type: u4
     enum: temp_unit
@@ -57,7 +63,9 @@ seq:
 instances:
   console_country_code:
     value: region_word >> 24
-    doc: The console's country code. Same numbers as `country_code` in forecast_file.ksy.
+    doc: |
+      The console's country code. Same numbers as `country_code` in
+      forecast_file.ksy (e.g. 1 = japan, 49 = united_states, 78 = germany).
 types:
   location_key:
     doc: |
@@ -70,6 +78,12 @@ types:
         type: u1
       - id: location_code
         type: u2
+    instances:
+      is_country_only:
+        value: region_code == 0 and location_code == 0
+        doc: |
+          True when only the country is set and no specific city. This is what the
+          channel uses when nothing is saved: it starts on the country.
 enums:
   temp_unit:
     0: celsius

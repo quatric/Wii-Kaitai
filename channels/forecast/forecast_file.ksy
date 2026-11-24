@@ -35,6 +35,8 @@ doc: |
     weather codes (forecast, six_hour_forecast)   0xFFFF
     precipitation (six_hour_precipitation, week)  0xFF
     temperatures (high_*, low_*)                  -128
+    temperature changes (*_difference)            -128
+    wind speeds (km/h and mph)                    0xFF  (shown as `--`)
     wind_direction                                0xFF  (`unused` in the enum)
     uv_index, laundry_index, pollen_count         0xFF  (`unused` in the enum)
     message_offset                                0
@@ -74,6 +76,9 @@ seq:
     doc: |
       Language of the text in the file. Must match the console's language, or
       the channel rejects the file. So there is one file per language.
+      The channel only supports these seven. If the console is set to any other
+      language, the channel treats it as English (and switches the console's
+      own language setting to English too).
   - id: region_flag
     type: u1
     enum: region_flag
@@ -167,6 +172,12 @@ types:
         type: u1
       - id: location_code
         type: u2
+    instances:
+      is_country_only:
+        value: region_code == 0 and location_code == 0
+        doc: |
+          True when only the country is set and no specific city. This is what the
+          channel uses when nothing is saved: it starts on the country.
   table_pointer:
     doc: Says where a table is in the file and how many entries it has.
     seq:
@@ -264,42 +275,45 @@ types:
         doc: Highest temperature in Celsius. -128 means unused.
       - id: high_celsius_difference
         type: s1
-        doc: Japan only. How much the high changed since yesterday.
+        doc: Japan only. How much the high changed since yesterday. -128 means unused.
       - id: low_celsius
         type: s1
         doc: Lowest temperature in Celsius. -128 means unused.
       - id: low_celsius_difference
         type: s1
-        doc: Japan only. How much the low changed since yesterday.
+        doc: Japan only. How much the low changed since yesterday. -128 means unused.
       - id: high_fahrenheit
         type: s1
         doc: Highest temperature in Fahrenheit. -128 means unused.
       - id: high_fahrenheit_difference
         type: s1
-        doc: Japan only. How much the high changed since yesterday.
+        doc: Japan only. How much the high changed since yesterday. -128 means unused.
       - id: low_fahrenheit
         type: s1
         doc: Lowest temperature in Fahrenheit. -128 means unused.
       - id: low_fahrenheit_difference
         type: s1
-        doc: Japan only. How much the low changed since yesterday.
+        doc: Japan only. How much the low changed since yesterday. -128 means unused.
       - id: six_hour_precipitation
         type: u1
         repeat: expr
         repeat-expr: 4
         doc: |
           Japan only. Chance of rain or snow (0-100 %) for 12am-6am, 6am-12pm,
-          12pm-6pm and 6pm-12am, in that order. 0xFF means unused.
+          12pm-6pm and 6pm-12am, in that order. 0xFF means unused (shown as `--`).
       - id: wind_direction
         type: u1
         enum: wind_direction
-        doc: Which way the wind blows. `calm` is no wind, `unused` hides the wind row.
+        doc: |
+          Which way the wind blows. `calm` is no wind, `unused` hides the wind row.
+          With `calm`, consoles in region group 1 (USA, Korea, etc.) show just the
+          speed; other consoles show the word for "calm" and no speed.
       - id: wind_speed_kilometers_per_hour
         type: u1
-        doc: Wind speed in km/h.
+        doc: Wind speed in km/h. 0xFF means unused (shown as `--`).
       - id: wind_speed_miles_per_hour
         type: u1
-        doc: Wind speed in mph.
+        doc: Wind speed in mph. 0xFF means unused (shown as `--`).
       - id: uv_index
         type: u1
         enum: index_code
@@ -309,11 +323,15 @@ types:
       - id: laundry_index
         type: u1
         enum: index_code
-        doc: Japan only. Laundry level, a code from laundry_index_table. 0xFF means none.
+        doc: |
+          Japan only. Laundry level, a code from laundry_index_table. 0xFF means
+          none. Only checked and shown on region group 0 consoles (Japan, Taiwan).
       - id: pollen_count
         type: u1
         enum: index_code
-        doc: Japan only. Pollen level, a code from pollen_count_table. 0xFF means none.
+        doc: |
+          Japan only. Pollen level, a code from pollen_count_table. 0xFF means
+          none. Only checked and shown on region group 0 consoles (Japan, Taiwan).
     instances:
       forecast_is_unused:
         value: (forecast & 0x7fff) == 999 or (forecast & 0x7fff) == 0x7fff
@@ -338,7 +356,7 @@ types:
         doc: Lowest temperature in Fahrenheit. -128 means unused.
       - id: precipitation
         type: u1
-        doc: Japan only. Chance of rain or snow, 0-100 %. 0xFF means unused.
+        doc: Japan only. Chance of rain or snow, 0-100 %. 0xFF means unused (shown as `--`).
       - id: padding
         type: u1
         doc: Padding. Never read.
@@ -361,6 +379,8 @@ types:
         doc: |
           Which icon to draw. The low 15 bits are the icon number (1-33 Japanese
           icons, 101-126 international). The top bit means "night version".
+          The channel also uses the icon number to pick rain and thunder sound
+          effects (see `plays_rain_sound`).
       - id: weather_text_offset
         type: u4
         doc: Where the weather's name starts (UTF-16BE text, e.g. "Sunny"). Can't be 0.
@@ -371,6 +391,15 @@ types:
       is_night:
         value: (weather_icon_code_2 & 0x8000) != 0
         doc: True if the night version of the icon is used.
+      is_international_icon:
+        value: icon_id >= 100
+        doc: True for the international icon set (100 and up). The Japanese icons are 1-33.
+      plays_thunder_sound:
+        value: icon_id == 5 or icon_id == 9 or icon_id == 14 or icon_id == 18 or icon_id == 125
+        doc: True if the channel plays thunder (and rain) sounds for this icon.
+      plays_rain_sound:
+        value: plays_thunder_sound or icon_id == 3 or icon_id == 7 or icon_id == 12 or icon_id == 16 or icon_id == 19 or icon_id == 20 or icon_id == 21 or icon_id == 22 or icon_id == 23 or icon_id == 24 or icon_id == 25 or icon_id == 31 or icon_id == 32 or icon_id == 103 or icon_id == 105 or icon_id == 108 or icon_id == 110 or icon_id == 111 or icon_id == 112 or icon_id == 113 or icon_id == 114 or icon_id == 115 or icon_id == 119 or icon_id == 120 or icon_id == 121
+        doc: True if the channel plays a rain sound for this icon (thunder icons included).
   uv_index_table:
     doc: Turns a UV code into text.
     seq:
@@ -386,7 +415,7 @@ types:
         type: u4
         doc: Where the text starts (UTF-16BE).
   laundry_index_table:
-    doc: Turns a laundry code into text. Only checked on Japanese consoles.
+    doc: Turns a laundry code into text. Only checked on region group 0 consoles (Japan, Taiwan).
     seq:
       - id: laundry_index_code
         type: u1
@@ -400,7 +429,7 @@ types:
         type: u4
         doc: Where the text starts (UTF-16BE).
   pollen_count_table:
-    doc: Turns a pollen code into text. Only checked on Japanese consoles.
+    doc: Turns a pollen code into text. Only checked on region group 0 consoles (Japan, Taiwan).
     seq:
       - id: pollen_count_code
         type: u1
@@ -426,7 +455,9 @@ types:
         doc: Where the city name starts (UTF-16BE). Can't be 0.
       - id: region_text_offset
         type: u4
-        doc: Where the region name starts (UTF-16BE). 0 means unused.
+        doc: |
+          Where the region name starts (UTF-16BE). 0 means unused. For cities in
+          Japan, shown in Japanese, the channel puts this in front of the city name.
       - id: country_text_offset
         type: u4
         doc: Where the country name starts (UTF-16BE). 0 means unused.

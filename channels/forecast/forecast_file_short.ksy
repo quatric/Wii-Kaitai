@@ -60,7 +60,10 @@ seq:
   - id: language_code
     type: u1
     enum: language_code
-    doc: Language of the file. Must match the console's language.
+    doc: |
+      Language of the file. Must match the console's language. Only the seven
+      languages in the enum are supported; any other console language counts as
+      English.
   - id: unknown_2
     type: u1
     doc: Same spot as region_flag in forecast.bin, but nothing checks or uses it here.
@@ -97,6 +100,12 @@ types:
         type: u1
       - id: location_code
         type: u2
+    instances:
+      is_country_only:
+        value: region_code == 0 and location_code == 0
+        doc: |
+          True when only the country is set and no specific city. This is what the
+          channel uses when nothing is saved: it starts on the country.
   table_pointer:
     doc: Says where a table is in the file and how many entries it has.
     seq:
