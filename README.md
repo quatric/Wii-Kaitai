@@ -701,3 +701,8 @@ That batch has since been written: `nw4r/brstm.ksy` (BRSTM/BFSTM/BCSTM),
 `media/dpg.ksy` from mobipeg, and `system/wux.ksy`, `nitro/nds.ksy`,
 `system/wad.ksy` from `wiimms-iso-tools-plus` — see the section below for
 what each was checked against.
+
+## Sync log (nintoolbox formats since 2026-10-08)
+
+<!-- sync-log -->
+- acx_hst, natsume_add_pac, criware/adx, alig_aig, bgib, jsystem_bfn, other/bcsv, ath_anm, necro_bmsg, bof_text, brawl_arc, astpcm, bct, beetex, betp_trace, btf_bundle, baao, bcab_chunks
