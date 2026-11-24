@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- octosec, ogl, onz, pangyapet, paon_d4, pbmpd, pixelpte, pixtpl, puzzler_lpz
 - nds_rrds, nds_zsd, ngcsd, nffont, nltex, nlxwb, nodamemsf, nrr, ntcompress, nxa1, nxof, nxms, njm, ninjachunk, nifclassic
 - mact, mee, mhsrt, midway_txt, momotex, monstersong, mthpstill, muranms, musx, musyx
 - jaudiobaa, jaudio_aaf, krvglc, ktss, lclpool, lngtab, lracp, lyse, lmxbdb
