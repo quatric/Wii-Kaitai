@@ -26,11 +26,12 @@ doc: |
 
     Field                            Means "unused" when it is
     -------------------------------  --------------------------
-    current_forecast                 0xFFFF
+    current_forecast                 0xFFFF  (the "now" page is empty, the
+                                              globe label shows `--` for temperature)
     unknown (in the entry)           0xFF
     current_temperature_celsius      -128  (shown as `--`)
     current_temperature_fahrenheit   -128  (shown as `--`)
-    current_wind_direction           0xFF  (`unused` in the enum)
+    current_wind_direction           0xFF  (`unused` in the enum; hides the wind line)
 
   Deep technical notes (addresses, validation rules): https://gist.github.com/quatric/23267cf80416303da28ef186551a88df
 seq:
@@ -140,7 +141,9 @@ types:
         type: u2
         doc: |
           Weather code, looked up in forecast.bin's weather_condition_codes_table.
-          0xFFFF means unused.
+          0xFFFF means unused. If it is unused (or not found), the channel treats the
+          whole entry as empty: no "now" page, and `--` instead of the temperature
+          on the globe label.
       - id: unknown
         type: u1
         doc: |
@@ -155,13 +158,15 @@ types:
       - id: current_wind_direction
         type: u1
         enum: wind_direction
-        doc: Which way the wind blows. `calm` is no wind, `unused` means no data. Never shown.
+        doc: |
+          Which way the wind blows. `calm` is no wind, `unused` hides the wind
+          line on the channel's "now" page.
       - id: current_wind_speed_kilometers_per_hour
         type: u1
-        doc: Wind speed in km/h. Never shown.
+        doc: Wind speed in km/h. Shown on the "now" page if the user chose km/h.
       - id: current_wind_speed_miles_per_hour
         type: u1
-        doc: Wind speed in mph. Never shown.
+        doc: Wind speed in mph. Shown on the "now" page if the user chose mph.
       - id: unknown_1
         type: u2
         doc: Never checked, never read.
