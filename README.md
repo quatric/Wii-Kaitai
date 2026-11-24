@@ -705,5 +705,6 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- dr_efa, pc_env0, etx, exibnk, geek_csa, gems_lang, gijoe_dfu, gos1, sega_gms, ralph_glob, gl_glob, gl_glob_names, studio_oz_gcsp, gcsw, ggx_archiver, eurocom_filelist, glacier_tex, flcg, ea_pcm_eat
 - btsnd, k11_btx, carc, ccd, cc2_fpk, cd_bigfile, chf_pack, cpf_crs, csvt, dhgc, dkap_toc, dog_mpc, dt3, dbpf, capcom_ana, capcom_lpk, capcom_fpk, dpk, capcom_caps, ctx_tex, datl, dhlvl, csvd
 - acx_hst, natsume_add_pac, criware/adx, alig_aig, bgib, jsystem_bfn, other/bcsv, ath_anm, necro_bmsg, bof_text, brawl_arc, astpcm, bct, beetex, betp_trace, btf_bundle, baao, bcab_chunks
