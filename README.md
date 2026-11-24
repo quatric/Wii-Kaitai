@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- simsvault was declared little endian but the vault is big endian; rewritten with the v3 type member table, class pointers, class and field chain, constraint records (synthetic vault parses to EOF). serz_geo gains display list and vertex array types; serz_tokens gains the R token.
 - Aliases hegame and gncp replaced with real definitions (XOR layer round-trip tested). redspark rewritten from the extractor (stream and bank headers), sumo_cog models draw commands, tvser models string tokens; synthetic round-trips pass.
 - Verified against real fixtures from nintoolbox/tests: baev (Tomodachi .baev: sizes chain to file size), brstm (RSTM header, file size matches), rwar (.rwav), nltex (.rlt), monster_sfx (Excite Truck .sfx: header + data = file size). Fixed baev (single section header + BFSI array) and brstm_stream field order; j3dbmt is now its own definition.
 - alar2, ctxtext, darpack, fev, brstm_stream plus exact-name alias definitions (importing the layout that covers them) so every d2 name resolves; cod_geom and kromemdl gained display-list / strip types

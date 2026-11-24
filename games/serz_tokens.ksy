@@ -12,7 +12,8 @@ doc: |
   instances are written compactly as {u8 entity, payload}; the entity table
   and V value widths depend on that state, so value payloads of 'V', 'A' and
   compact tokens are kept as opaque here and need an application-side
-  decoder. The header is "SERZ" + u32 version.
+  decoder (V, A and compact tokens are inherently stateful in this format, so a
+  context-free .ksy cannot go further than this). The header is "SERZ" + u32 version.
 seq:
   - id: magic
     contents: SERZ
@@ -50,6 +51,7 @@ types:
             0x42: b_body
             0x70: u2_body
             0x4e: empty
+            0x52: r_body
             _: opaque_rest
   five_bytes:
     seq:
@@ -62,6 +64,13 @@ types:
       - id: id
         type: u4
       - id: child_count
+        type: u4
+  r_body:
+    doc: First definition of an 'R' token (geometry); later instances are compact and need the entity table.
+    seq:
+      - id: name
+        type: string_ref
+      - id: value
         type: u4
   b_body:
     seq:
