@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- ai00, ascsyn, avdict, btd, octowt, petzozzy, kss_wave, pikmin_blo, rifx, rw_clump, scribvec, mibdsp
 - segapvr_png, smsgvr, sousound, spectrobes_hit, sptbank, txw, xabfsb, sega_msb, gnomz_ltex, bfevfl, tera, zeldabake, zelda_bbox, zelda_flnt, mcpk, unityfs, xbin, xlnk, tgaimg, txtcdec, dls, tvser
 - pwkvm, racres, redballmus, retropak, rketdsp, rvli, rw_txd_gc, rwsd_single, rwsdsp, sceibank, seafsb
 - octosec, ogl, onz, pangyapet, paon_d4, pbmpd, pixelpte, pixtpl, puzzler_lpz
