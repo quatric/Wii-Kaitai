@@ -60,31 +60,30 @@ types:
             "'KI'": keyframe_index_payload
   timeline_payload:
     doc: |
-      Timeline info: frame count, FPS, subchunk count.
+      Timeline info: three u4 values (7672, 1079, 31744 in a retail Wii movie;
+      the meaning of each is not pinned down: one is the frame count and one
+      encodes the frame rate), then any remaining bytes.
     seq:
-      - id: subchunk_count
-        type: u2
-      - id: fps
+      - id: value0
         type: u4
-        doc: Frames per second.
-      - id: chunk_count
+      - id: value1
         type: u4
-      - id: unknown
-        size: _parent.word_len * 4 - 10
-        if: _parent.word_len * 4 > 10
+      - id: value2
+        type: u4
+      - id: rest
+        size: _parent.word_len * 4 - 12
+        if: _parent.word_len * 4 > 12
   video_payload:
     doc: |
-      Video parameters: width, height.
+      Video parameters: width, height (u4 each; 640 x 464 in a retail movie).
     seq:
-      - id: unknown
-        type: u2
       - id: width
         type: u4
       - id: height
         type: u4
       - id: rest
-        size: _parent.word_len * 4 - 10
-        if: _parent.word_len * 4 > 10
+        size: _parent.word_len * 4 - 8
+        if: _parent.word_len * 4 > 8
   audio_standard_payload:
     doc: |
       Audio stream info. Tag meanings:
@@ -95,6 +94,15 @@ types:
         A9 -> IMA ADPCM stereo
         AP -> PCM S16
         AV -> Vorbis (unusual framing, see gist §5.3)
+    seq:
+      - id: frequency
+        type: u4
+      - id: channel_count
+        type: u4
+      - id: rest
+        size: _parent.word_len * 4 - 8
+        if: _parent.word_len * 4 > 8
+  audio_stream_entry:
     seq:
       - id: stream_type
         type: u2
@@ -111,23 +119,19 @@ types:
       - id: audio_stream_count
         type: u4
       - id: audio_streams
-        type: audio_standard_payload
+        type: audio_stream_entry
         repeat: expr
         repeat-expr: audio_stream_count
   keyframe_index_payload:
     doc: |
-      Keyframe index for seeking. Entry count is in units of 8 bytes
-      (each entry is a chunk_offset + frame_index pair).
+      Keyframe index for seeking: the payload is a plain array of
+      (chunk_offset, frame_index) pairs, `word_len / 2` of them; the first
+      pair is the first frame chunk (offset == header_size + 8, frame 0).
     seq:
-      - id: entry_count
-        type: u2
       - id: keyframes
         type: keyframe_entry
         repeat: expr
-        repeat-expr: entry_count / 2
-      - id: trailer
-        size: _parent.word_len * 4 - 2 - (entry_count / 2 * 8)
-        if: _parent.word_len * 4 - 2 - (entry_count / 2 * 8) > 0
+        repeat-expr: _parent.word_len / 2
   keyframe_entry:
     seq:
       - id: chunk_offset
