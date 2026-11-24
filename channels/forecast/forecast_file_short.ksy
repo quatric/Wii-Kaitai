@@ -17,6 +17,9 @@ doc: |
     * This file has no weather-name table. Its weather codes are looked up in
       forecast.bin, so the two files must be made as a pair.
     * If forecast.bin carries a service message, this file isn't read at all.
+    * Time starts at 2000-01-01 00:00 (a Saturday).
+    * Every city here must match exactly one entry in forecast.bin's
+      location_table, or the channel rejects the file.
 
   "UNUSED" MARKERS. When a field has nothing to say, it is filled with an
   all-ones value instead of 0. Check for it before using the field:
@@ -114,16 +117,22 @@ types:
         doc: Number of entries. 0 means the table is empty.
       - id: offset
         type: u4
-        doc: Where the first entry starts, counted in bytes from the start of the file.
+        doc: |
+          Where the first entry starts, counted in bytes from the start of the file.
+          Must be a multiple of 4, and the whole table must fit inside the file,
+          or the channel rejects the file.
   current_forecast_table:
     doc: One city's current weather (0x18 bytes).
     seq:
       - id: key
         type: location_key
-        doc: Which city this is.
+        doc: Which city this is. Must match exactly one entry in forecast.bin's location_table.
       - id: local_timestamp
         type: u4
-        doc: When this was measured, in the city's local time (minutes since 2000). Shown as "As of ..." on the Wii Menu.
+        doc: |
+          When this was measured, in the city's local time (minutes since 2000).
+          Shown as "As of ..." on the Wii Menu. The channel counts 6am to 6pm local
+          time as daytime and picks its day or night look from it.
       - id: global_timestamp
         type: u4
         doc: The same moment in UTC (minutes since 2000). Nothing uses it.

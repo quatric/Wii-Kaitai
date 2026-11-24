@@ -25,7 +25,16 @@ doc: |
     * short_forecast_table is NOT the file short.bin. short.bin is a separate
       file for current weather (see forecast_file_short.ksy).
     * The channel rejects the whole file if the checksum, size, language or
-      any code lookup is wrong, and shows error FORE000006.
+      any code lookup is wrong, and shows error FORE000006. Other rules:
+        - every city in a forecast table must match exactly one entry in
+          location_table, and no two locations may share a key;
+        - every location must be used by some forecast entry (or by a
+          short.bin entry);
+        - weather codes and UV/laundry/pollen codes must be unique in their
+          own tables;
+        - every text offset must be inside the file and even (UTF-16);
+        - each table must start on a multiple of 4 bytes.
+    * Time starts at 2000-01-01 00:00 (a Saturday).
 
   "UNUSED" MARKERS. When a field has nothing to say, it is filled with an
   all-ones value instead of 0. Check for it before using the field:
@@ -186,7 +195,10 @@ types:
         doc: Number of entries. 0 means the table is empty.
       - id: offset
         type: u4
-        doc: Where the first entry starts, counted in bytes from the start of the file.
+        doc: |
+          Where the first entry starts, counted in bytes from the start of the file.
+          Must be a multiple of 4, and the whole table must fit inside the file,
+          or the channel rejects the file.
   long_forecast_table:
     doc: |
       One city's full forecast (0x80 bytes): today, tomorrow, then seven more days.
@@ -194,10 +206,12 @@ types:
     seq:
       - id: key
         type: location_key
-        doc: Which city this is.
+        doc: Which city this is. Must match exactly one entry in location_table.
       - id: local_timestamp
         type: u4
-        doc: When the forecast was issued, in the city's local time (minutes since 2000).
+        doc: |
+          When the forecast was issued, in the city's local time (minutes since
+          2000). If this is 6pm or later, the channel uses the evening/night look.
       - id: global_timestamp
         type: u4
         doc: The same moment in UTC (minutes since 2000).
@@ -231,10 +245,12 @@ types:
     seq:
       - id: key
         type: location_key
-        doc: Which city this is.
+        doc: Which city this is. Must match exactly one entry in location_table.
       - id: local_timestamp
         type: u4
-        doc: When the forecast was issued, in the city's local time (minutes since 2000).
+        doc: |
+          When the forecast was issued, in the city's local time (minutes since
+          2000). If this is 6pm or later, the channel uses the evening/night look.
       - id: global_timestamp
         type: u4
         doc: The same moment in UTC (minutes since 2000).
@@ -444,8 +460,8 @@ types:
         doc: Where the text starts (UTF-16BE).
   location_table:
     doc: |
-      One city on the globe (0x18 bytes). Every city here must be used by some
-      forecast entry, or the channel rejects the file.
+      One city on the globe (0x18 bytes). Every city here must have a unique key
+      and be used by some forecast entry, or the channel rejects the file.
     seq:
       - id: key
         type: location_key
