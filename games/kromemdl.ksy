@@ -51,3 +51,14 @@ types:
         type: u2
       - id: uv_index
         type: u2
+  strip:
+    seq:
+      - id: op
+        type: u1
+        doc: 0x98 strip, 0x90 list, 0xa0 fan (9-byte records); 0x9a / 0x92 / 0xa2 use 15-byte (skinned) records.
+      - id: n
+        type: u2
+      - id: vertices
+        type: strip_vertex
+        repeat: expr
+        repeat-expr: n

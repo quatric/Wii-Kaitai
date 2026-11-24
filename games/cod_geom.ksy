@@ -77,3 +77,52 @@ types:
         type: u1
       - id: array_ptr
         type: u4
+  display_list:
+    doc: |
+      GX draw commands; vertices carry one array index per attribute in table
+      order (u8, or u16 when the array has more than 256 elements). `index_wide`
+      holds one flag per attribute.
+    params:
+      - id: index_wide
+        type: bytes
+    seq:
+      - id: commands
+        type: draw_command(index_wide)
+        repeat: until
+        repeat-until: _.opcode == 0 or _io.eof
+  draw_command:
+    params:
+      - id: index_wide
+        type: bytes
+    seq:
+      - id: opcode
+        type: u1
+        doc: 0x80 quads, 0x90 triangles, 0x98 strip, 0xa0 fan.
+      - id: vertex_count
+        type: u2
+        if: opcode != 0
+      - id: vertices
+        type: vertex(index_wide)
+        repeat: expr
+        repeat-expr: vertex_count
+        if: opcode != 0
+  vertex:
+    params:
+      - id: index_wide
+        type: bytes
+    seq:
+      - id: indices
+        type: index(index_wide[_index])
+        repeat: expr
+        repeat-expr: index_wide.size
+  index:
+    params:
+      - id: wide
+        type: u1
+    seq:
+      - id: narrow_value
+        type: u1
+        if: wide == 0
+      - id: wide_value
+        type: u2
+        if: wide != 0
