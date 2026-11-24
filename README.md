@@ -88,6 +88,7 @@ A further batch adds `bcpak`, `backyard_bank`, `k11_a2`, `kirby_bgdt`, `black_sh
 `atcd` and `asura_str`.
 Plus `acr_mess` (Another Code R), `ndp`, `kwtp`, `atlus_flw0` (Trauma Team), `adev`,
 `academy_asb` in `games/` and `criware/aix`.
+And `jpc` (JParticle), `nintendo_ast`, `asura_arc`, `frhd` and `abrs` (Sakura Wars).
 
 Where nintoolbox only detects a container and does not document its inner chunks
 (Procyon SWD/SMD, Camelot MDLR, Capcom MODS/GML1), the definition covers the header and
