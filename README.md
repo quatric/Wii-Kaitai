@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- sfayyaf, slz, sntbank, sonicex, sonicone, stbltext, stme, sts, swd, tapsdat, tatepak, tdbtext, tdw, tdxs, tecmoad, tenchu_pack, terf
 - re4_drs, re_off, rmhg, rspa, rtdp_vld, rsc0, rkv2, ref_chnk, rockstar_gxt, scribble_index, sdd, stormfront_seg, sega_abst, sega_glip, sega_gtpa, sega_mscr, s3t, platinum_rsp, rcchr, scf
 - nitro/ntbg, sonic_one, pk03, popn_sen, luxor_ppk, pwk_bdg, rcb, pikmin_parm, pikmin_txe, pikmin_anm, pikmin_gst, pikmin_cam, pim, okami_t, pacs, piz_arc, pms_pac, rbin, octomania_secb
 - midway_asf, midway_fnt, midway_pha, midway_sfx, midway_spr, midway_tim, midway_sec, mjbf_bft, msgp, nitro/nds_strm, nitro/nds_swav, nitro/nds_swar, nintendo_afc, nlcm, nlg_rlt, nlg_res, muramasa_nmsb, nitro/nds_hwas, ngcbm, mmpaq, mula_mtp, mt_arc, mtxz, neko_lzss, myspd, musdsp, muskrome, mrv_pbin_dpt
