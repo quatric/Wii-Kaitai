@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- midway_asf, midway_fnt, midway_pha, midway_sfx, midway_spr, midway_tim, midway_sec, mjbf_bft, msgp, nitro/nds_strm, nitro/nds_swav, nitro/nds_swar, nintendo_afc, nlcm, nlg_rlt, nlg_res, muramasa_nmsb, nitro/nds_hwas, ngcbm, mmpaq, mula_mtp, mt_arc, mtxz, neko_lzss, myspd, musdsp, muskrome, mrv_pbin_dpt
 - jpi_index, kbbe, konami_vas, krome_tex, lang_str, lmp_tex, imagine_loc, mct_text, jdlz, kwa, mh2_mat, lz11_dat_tbl, kdsp, lipb_sync, lso_str, lxbd, mde1, mh2z, mh2_mls, ktm, jppak
 - other/j3d_bck, j3d_bpk, j3d_brk, j3d_btp, hal_hps, hvt, sega_gts, imy, imagine_lz, iwi_img, jade_bf, hdpk, hal_ssm, imagine_msk, imagine_tan, imagine_wsp, imagine_cam, gvrs, ibz_zlib, iois_str, iswsdsp, iw_ff, igor_mkr
 - dr_efa, pc_env0, etx, exibnk, geek_csa, gems_lang, gijoe_dfu, gos1, sega_gms, ralph_glob, gl_glob, gl_glob_names, studio_oz_gcsp, gcsw, ggx_archiver, eurocom_filelist, glacier_tex, flcg, ea_pcm_eat
