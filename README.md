@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- smp, ssrt, vaps, ubiipk, vtb, wsbdsp
 - vtdb2, wbk, wavebatch, wayforward_wave, wiiasset, sgcaudio, slam_chunks, sukebanevent, tdns, tgstex, wittex, sz00zlib, snhstream, umod_footer, sonic_bbina, sumosbn
 - waf, waud, wiidir, wiiidarc, ws49pak, wsbl, wtmd, wtpak, wwb, wwisebnk, xar, xpac, ydsp, zap, wsistream
 - tpkbres, tpx, twi, timg, txm, u8ctext, uocc, unitedata, vliblib, vbkdsp, v1b
