@@ -76,7 +76,8 @@ A follow-up batch (2026-10-08) adds, in `games/`: `zoe_hvp`, `namco_nub`, `pda_b
 members.
 
 A further batch (2026-11-23) adds, in `games/`: `ipck` (Tales of Symphonia: Dawn of the New
-World), `kp0_pkt` (Power Punch) and `midway_wad` (TNA Impact!).
+World), `kp0_pkt` (Power Punch) and `midway_wad` (TNA Impact!), `heatseeker_ffs`, `fgn_blk` (Family Game Night 4),
+`fsar` (DJ Hero) and `gamedata_fat` (Battle of Giants: Dinosaurs Strike).
 
 Where nintoolbox only detects a container and does not document its inner chunks
 (Procyon SWD/SMD, Camelot MDLR, Capcom MODS/GML1), the definition covers the header and
