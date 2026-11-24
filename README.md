@@ -79,7 +79,9 @@ A further batch (2026-11-23) adds, in `games/`: `ipck` (Tales of Symphonia: Dawn
 World), `kp0_pkt` (Power Punch) and `midway_wad` (TNA Impact!), `heatseeker_ffs`, `fgn_blk` (Family Game Night 4),
 `fsar` (DJ Hero) and `gamedata_fat` (Battle of Giants: Dinosaurs Strike),
 `rubiks_ma`, `coresoft_jpack`, `mama_pkb` (Cooking / Babysitting Mama), `konami_afs` (PES 2012) and
-`iarc` (Benjamin Blumchen).
+`iarc` (Benjamin Blumchen),
+`neko_grp`, `okami_dat`, `omom` (Monster Hunter 3), `nlg_zlib`, `coresoft_nwtx` and `sting_pah`
+(Dokapon Kingdom).
 
 Where nintoolbox only detects a container and does not document its inner chunks
 (Procyon SWD/SMD, Camelot MDLR, Capcom MODS/GML1), the definition covers the header and
