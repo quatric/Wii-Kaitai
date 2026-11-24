@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- scumm_he, i3ds, idsp_ie, ifp_anct, igor_fbin, igor_chkf, igz, imaginewa2, imaginewsn, ish_isd
 - gcaxmpb, gcub, gfx, gmf2, gno, gsnd, gsr, gvx, hbmmbd
 - eabnk, ealoc, eamus, eashpg, eatext, eqimgset, ertmvox, ertm_resource, faafz, fbnd, fcmpftex
 - capcomtex, capcomtres, ccfpk, chnktree, cmps, conan_str, cs12, dbttex, dcf, dctdict, dkapbig, dpgz, dspbnk, dspstr, ea_gfn, eaaems, eabank
