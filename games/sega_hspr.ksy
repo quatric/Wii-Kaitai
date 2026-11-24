@@ -18,10 +18,23 @@ seq:
   - id: header_size
     type: u4
     doc: 0x10.
-  - id: zero
+  - id: flags
     type: u4
+    doc: 0 for a plain chunk; bit 0x400 marks the Melt-packed ".bfX" form.
   - id: kspr
     type: kspr
+    if: not is_packed
+  - id: melt_block
+    size: 16
+    if: is_packed
+    doc: Packed form only (header size 0x10 + this 16-byte block, stream at 0x20).
+  - id: melt_stream
+    size-eos: true
+    if: is_packed
+    doc: Melt-compressed data (see sega_melt); decompressing it restores the plain chunk described by `kspr`.
+instances:
+  is_packed:
+    value: (flags & 0x400) != 0
 types:
   kspr:
     seq:

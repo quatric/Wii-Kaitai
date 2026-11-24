@@ -11,7 +11,7 @@ seq:
   - id: magic
     contents: STRM
   - id: bom
-    contents: [0xff, 0xfe, 0x01, 0x00]
+    contents: [0xff, 0xfe, 0x00, 0x01]
   - id: len_file
     type: u4
   - id: header_size

@@ -52,14 +52,13 @@ types:
   table_tail_t:
     seq:
       - id: marker
-        contents: "L234"
-        doc: End-of-table marker present when there is a table-tail region.
-      - id: padding
-        type: u1
-        repeat: eos
+        size: 4
         valid:
-          eq: 0
-        doc: Zero padding before the first payload.
+          expr: _[0] == 0x4c and _[1] == 0x32
+        doc: 'End-of-table marker, "L2" plus two digits: "L234" in most files, "L231" / "L222" in some SSX Blur archives.'
+      - id: padding
+        size-eos: true
+        doc: Padding before the first payload (zero in the files nintoolbox writes; some retail archives keep other bytes here).
   entry:
     seq:
       - id: ofs_body

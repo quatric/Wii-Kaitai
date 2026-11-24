@@ -19,6 +19,15 @@ seq:
     contents: HTSF
   - id: htsf_rest
     size: 12
+  - id: gbix_tag
+    contents: GBIX
+    if: has_gbix
+  - id: gbix_size
+    type: u4
+    if: has_gbix
+  - id: gbix_body
+    size: gbix_size
+    if: has_gbix
   - id: pvrt
     contents: PVRT
   - id: size
@@ -35,5 +44,14 @@ seq:
     type: u2
   - id: palette
     size: 256 * 4
+    if: data_format == 0x6c
+    doc: Only the palettised flavour (data format 0x6c) carries a palette.
   - id: indices
     size: width * height
+instances:
+  has_gbix_tag:
+    pos: 0x20
+    size: 4
+  has_gbix:
+    value: has_gbix_tag == [0x47, 0x42, 0x49, 0x58]
+    doc: The unpalettised "wipe mask" flavour has a GBIX chunk before PVRT.

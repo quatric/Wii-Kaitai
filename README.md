@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- Found by running every magic-bearing definition over real disc dumps: nds_strm BOM bytes (71 files failed), htex GBIX flavour, sega_hspr Melt-packed form, bigf L2xx markers and non-zero tail bytes.
 - Whole repo now compiles (1067 files, 0 errors). Real-file sweep: 90 parses over 42 formats. Fixes found by real files: byml (24-bit count endianness, root container, string tables), bflyt/bflan (Wii U byte order, u2 counts), ncer/ncgr/nclr (missing BOM and version), narc (u2 file count), gvr (little-endian chunk sizes), brawl_arc header size, iplsave (verified on a real save). Ten upstream files that never compiled (config, nwc24fl, tmds, mpr_*, accf_dlc_bitm, mobiclip*, etc.) repaired.
 - simsvault was declared little endian but the vault is big endian; rewritten with the v3 type member table, class pointers, class and field chain, constraint records (synthetic vault parses to EOF). serz_geo gains display list and vertex array types; serz_tokens gains the R token.
 - Aliases hegame and gncp replaced with real definitions (XOR layer round-trip tested). redspark rewritten from the extractor (stream and bank headers), sumo_cog models draw commands, tvser models string tokens; synthetic round-trips pass.
