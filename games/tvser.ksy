@@ -25,7 +25,15 @@ types:
         type: u1
       - id: rest
         size: len_rest
+      - id: string_chars
+        type: u1
+        repeat: until
+        repeat-until: (_ & 0x80) != 0
+        if: first == 0xfc
+        doc: Characters up to and including the one with bit 7 set; that one carries the last character in its low 7 bits.
     instances:
+      is_end:
+        value: first == 0xff
       len_rest:
         value: >-
           first < 0x80 ? 0 :

@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- Aliases hegame and gncp replaced with real definitions (XOR layer round-trip tested). redspark rewritten from the extractor (stream and bank headers), sumo_cog models draw commands, tvser models string tokens; synthetic round-trips pass.
 - Verified against real fixtures from nintoolbox/tests: baev (Tomodachi .baev: sizes chain to file size), brstm (RSTM header, file size matches), rwar (.rwav), nltex (.rlt), monster_sfx (Excite Truck .sfx: header + data = file size). Fixed baev (single section header + BFSI array) and brstm_stream field order; j3dbmt is now its own definition.
 - alar2, ctxtext, darpack, fev, brstm_stream plus exact-name alias definitions (importing the layout that covers them) so every d2 name resolves; cod_geom and kromemdl gained display-list / strip types
 - abc, asobo_vai, gcdsp_misc, gda, htex, kcs, momomessage, nds_sadl, rtex, rwar, sasrefpack, wiidsp_misc, wii_saveicon, loc, pikmin_seq, lua51_be, bphcl, sega_grd, sega_msb_ops, dcw

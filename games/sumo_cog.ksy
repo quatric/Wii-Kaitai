@@ -13,7 +13,49 @@ seq:
     type: descriptor
     repeat: until
     repeat-until: _.attribute == 0x0f
+  - id: align_pad
+    size: (0x20 - (_io.pos % 0x20)) % 0x20
+    doc: Alignment to 0x20 (relative to the start of this stream; slice the .cog at a 0x20-aligned mesh start).
+  - id: draw_commands
+    type: draw_command
+    repeat: until
+    repeat-until: _.is_end or _io.eof
 types:
+  draw_command:
+    seq:
+      - id: opcode
+        type: u1
+        doc: 0x80 quads, 0x90 triangles, 0x98 strip, 0xA0 fan; anything else ends the list.
+      - id: vertex_count
+        type: u2
+        if: not is_end
+      - id: vertices
+        type: vertex
+        repeat: expr
+        repeat-expr: vertex_count
+        if: not is_end
+    instances:
+      is_end:
+        value: opcode != 0x80 and opcode != 0x90 and opcode != 0x98 and opcode != 0xa0
+  vertex:
+    seq:
+      - id: indices
+        type: index(_index)
+        repeat: expr
+        repeat-expr: _root.descriptors.size - 1
+        doc: One index per descriptor, in order (the 0x0F terminator excluded).
+  index:
+    params:
+      - id: i
+        type: s4
+    seq:
+      - id: narrow
+        type: u1
+        if: _root.descriptors[i].index_width == 1
+      - id: wide
+        type: u2
+        if: _root.descriptors[i].index_width != 1
+
   descriptor:
     seq:
       - id: attribute
