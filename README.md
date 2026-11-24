@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- txag, txg, uber, usm, vag, vetdata_edf, vt_worldtour, vtanim, wiiarcimg, wscshot, wtxid, sonic_gncp, sega_abda, sega_ghsl
 - stp, serz_tokens, sumo_display_list; deeper upk, unityassets, spxogg, swfres, switch_opus, simsvault
 - idd, fezc, hudson_pdt, kylotonn, kylotonn_chunks, nftr, gaftx, mosdata
 - unityassets, spxogg, swfres, switch_opus, serz_geo, sumo_cog
