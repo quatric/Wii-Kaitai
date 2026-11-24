@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- unityassets, spxogg, swfres, switch_opus, serz_geo, sumo_cog
 - ubi_loc, sonic_xtb, ubi_ban, serz_tg, zsnd, wis, sygnus, upk, ubibao, simsvault, strtbl, stptext, vddbstr, ubisb
 - smp, ssrt, vaps, ubiipk, vtb, wsbdsp
 - vtdb2, wbk, wavebatch, wayforward_wave, wiiasset, sgcaudio, slam_chunks, sukebanevent, tdns, tgstex, wittex, sz00zlib, snhstream, umod_footer, sonic_bbina, sumosbn
