@@ -121,17 +121,17 @@ types:
     instances:
       names_base:
         value: _io.pos
-  enums:
-    pica_format:
-      0x14016752: rgba8
-      0x14016754: rgb8
-      0x80346752: rgba5551
-      0x83636754: rgb565
-      0x80336752: rgba4
-      0x14016758: la8
-      0x67606758: la4
-      0x14016757: l8
-      0x14016756: a8
-      0x67616757: l4
-      0x0000675a: etc1
-      0x0000675b: etc1a4
+enums:
+  pica_format:
+    0x14016752: rgba8
+    0x14016754: rgb8
+    0x80346752: rgba5551
+    0x83636754: rgb565
+    0x80336752: rgba4
+    0x14016758: la8
+    0x67606758: la4
+    0x14016757: l8
+    0x14016756: a8
+    0x67616757: l4
+    0x0000675a: etc1
+    0x0000675b: etc1a4

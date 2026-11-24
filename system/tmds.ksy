@@ -50,7 +50,7 @@ seq:
   - id: group_id
     type: u2
     doc: 0x200 or 0x300 if cid2[0] == '.\0', 0x400 when cid2[0] == '1'. If cid[0] == 'R', this is usually a number (in ASCII), but it can contain letters.
-  - id: unknown
+  - id: unknown_trailer
     type: u4
     repeat: expr
     repeat-expr: 6

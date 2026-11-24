@@ -11,6 +11,11 @@ doc: |
 seq:
   - id: magic
     contents: "RECN"
+  - id: bom
+    type: u2
+    doc: Byte-order mark (0xFEFF stored little-endian; 0 in some NCGR files).
+  - id: version
+    type: u2
   - id: file_size
     type: u4
   - id: header_size

@@ -5,7 +5,7 @@ meta:
     - ces
     - dec
   endian: be
-  doc: popcrafts_list holds the top Miis, a category that's selectable through the posting plaza.
+doc: popcrafts_list holds the top Miis, a category that's selectable through the posting plaza.
 seq:
   - id: header 
     type: header

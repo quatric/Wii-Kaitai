@@ -2,6 +2,7 @@ meta:
   id: aamp
   file-extension: aamp
   title: Nintendo AAMP parameter archive
+  endian: le
 doc: |
   Nintendo EAD's "Parameter IO" binary archive: a tree of named parameter
   lists, each holding child lists, objects, and (inside an object) typed

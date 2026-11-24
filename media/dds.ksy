@@ -81,7 +81,7 @@ types:
         type: u4
     instances:
       is_dx10:
-        value: (pixel_format.flags & 0x4) != 0 and pixel_format.four_cc == 0x30315844
+        value: (pixel_format.flags & 0x4) != 0 and pixel_format.four_cc.to_i == 0x30315844
         doc: DDPF_FOURCC set and FourCC == "DX10".
       dx10_header:
         type: dds_header_dxt10

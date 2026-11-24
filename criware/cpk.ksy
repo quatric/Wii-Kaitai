@@ -128,7 +128,7 @@ types:
             value: flags & 0x0f
           name:
             io: _root._io
-            pos: _parent._parent.ofs_strings + ofs_name
+            pos: _parent.ofs_strings + ofs_name
             type: strz
             encoding: ASCII
   crilayla_header:

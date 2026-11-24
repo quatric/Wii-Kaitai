@@ -21,7 +21,7 @@ seq:
     type: strz
     encoding: ASCII
   - id: reserved1
-    size: 0x30
+    size: 0x20
   - id: members
     type: member
     repeat: expr

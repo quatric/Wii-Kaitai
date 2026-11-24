@@ -35,11 +35,11 @@ seq:
     doc: One 16-byte compressed ASTC block per tile, row-major.
 instances:
   width:
-    value: width_raw[0].to_i + (width_raw[1].to_i << 8) + (width_raw[2].to_i << 16)
+    value: width_raw[0] + (width_raw[1] << 8) + (width_raw[2] << 16)
   height:
-    value: height_raw[0].to_i + (height_raw[1].to_i << 8) + (height_raw[2].to_i << 16)
+    value: height_raw[0] + (height_raw[1] << 8) + (height_raw[2] << 16)
   depth:
-    value: depth_raw[0].to_i + (depth_raw[1].to_i << 8) + (depth_raw[2].to_i << 16)
+    value: depth_raw[0] + (depth_raw[1] << 8) + (depth_raw[2] << 16)
   num_blocks_x:
     value: (width + block_x - 1) / block_x
   num_blocks_y:

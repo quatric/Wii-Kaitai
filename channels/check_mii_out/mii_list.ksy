@@ -125,13 +125,13 @@ enums:
   popularity:
     19: has_1_star
     20: has_2_5_stars
-    21: has_2_5_stars
+    21: has_2_5_stars_alt
     22: has_3_stars
     23: has_3_5_stars
-    24: has_3_5_stars
+    24: has_3_5_stars_alt
     25: has_4_stars
     26: has_4_5_stars
-    27: has_4_5_stars
+    27: has_4_5_stars_alt
     28: has_5_stars
   type:
     0x424c: bl_best_list

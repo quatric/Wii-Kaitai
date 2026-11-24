@@ -4,9 +4,9 @@ meta:
     - ces
     - dec
   endian: be
-  doc: |
-    Check Mii Out Channel Addition Data (AD tag).
-    Contains preset Miis (NH), artisan profiles (NJ), and header metadata (NW).
+doc: |
+  Check Mii Out Channel Addition Data (AD tag).
+  Contains preset Miis (NH), artisan profiles (NJ), and header metadata (NW).
 seq:
   - id: type
     contents: "AD"

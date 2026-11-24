@@ -1,7 +1,6 @@
 meta:
   id: bflan
   file-extension: bflan
-  endian: le
   title: NintendoWare BFLAN layout animation
 doc: |
   Keyframe animation for a BFLYT, and the 3DS/Wii U successor to BRLAN.
@@ -38,25 +37,48 @@ seq:
   - id: magic
     contents: "FLAN"
   - id: bom
-    type: u2
-  - id: len_header
-    type: u2
-    doc: 0x14.
-  - id: version
-    type: u4
-    doc: 0x07020100 across all 900 samples.
-  - id: len_file
-    type: u4
-  - id: num_sections
-    type: u2
-  - id: reserved
-    type: u2
-  - id: sections
-    type: section
-    repeat: expr
-    repeat-expr: num_sections
+    type: u2le
+    doc: Byte-order mark; bytes FF FE (read here as 0xFEFF) mean little endian (3DS), FE FF mean big endian (Wii U).
+  - id: body
+    type: body(bom == 0xfeff)
 types:
+  body:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
+    seq:
+      - id: len_header
+        type: u2
+        doc: 0x14.
+      - id: version
+        type: u4
+        doc: 0x07020100 across all 900 samples.
+      - id: len_file
+        type: u4
+      - id: num_sections
+        type: u2
+      - id: reserved
+        type: u2
+      - id: sections
+        type: section(is_le)
+        repeat: expr
+        repeat-expr: num_sections
   section:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     seq:
       - id: magic
         type: str
@@ -69,10 +91,18 @@ types:
         type:
           switch-on: magic
           cases:
-            '"pat1"': animation_tag
-            '"pai1"': animation_info
-
+            '"pat1"': animation_tag(is_le)
+            '"pai1"': animation_info(is_le)
   animation_tag:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: |
       `pat1`. Names the animation and lists the layout groups it applies
       to, and gives the frame range the tag covers. Both offsets are
@@ -116,6 +146,15 @@ types:
           num_groups` comes to in every one of the 900 samples.
 
   animation_info:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: |
       `pai1`. `ofs_entries` is relative to the start of the section; the
       texture-name offsets are relative to the start of their own table,
@@ -132,18 +171,27 @@ types:
       - id: ofs_entries
         type: u4
       - id: textures
-        type: texture_ref
+        type: texture_ref(is_le)
         repeat: expr
         repeat-expr: num_textures
         doc: Images a `FLTP` pattern animation cycles through.
     instances:
       entries:
         pos: ofs_entries - 8
-        type: entry_ref
+        type: entry_ref(is_le)
         repeat: expr
         repeat-expr: num_entries
 
   texture_ref:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     seq:
       - id: ofs_name
         type: u4
@@ -159,6 +207,15 @@ types:
           counters and `ofs_entries`.
 
   entry_ref:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     seq:
       - id: ofs_entry
         type: u4
@@ -167,13 +224,20 @@ types:
       entry:
         io: _parent._io
         pos: ofs_entry - 8
-        type: animation_entry(ofs_entry - 8)
-
+        type: animation_entry(is_le, ofs_entry - 8)
   animation_entry:
-    doc: One animated pane or material, named rather than pointed at.
     params:
+      - id: is_le
+        type: bool
       - id: self_ofs
         type: s4
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
+    doc: One animated pane or material, named rather than pointed at.
     seq:
       - id: name
         type: str
@@ -188,12 +252,20 @@ types:
       - id: reserved
         type: u2
       - id: tags
-        type: tag_ref(self_ofs)
+        type: tag_ref(is_le, self_ofs)
         repeat: expr
         repeat-expr: num_tags
 
   tag_ref:
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     params:
+      - id: is_le
+        type: bool
       - id: base_ofs
         type: s4
     seq:
@@ -202,13 +274,20 @@ types:
     instances:
       tag:
         pos: base_ofs + ofs_tag
-        type: tag(base_ofs + ofs_tag)
-
+        type: tag(is_le, base_ofs + ofs_tag)
   tag:
-    doc: A group of curves sharing one target kind.
     params:
+      - id: is_le
+        type: bool
       - id: self_ofs
         type: s4
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
+    doc: A group of curves sharing one target kind.
     seq:
       - id: magic
         type: str
@@ -220,12 +299,20 @@ types:
       - id: reserved
         size: 3
       - id: curves
-        type: curve_ref(self_ofs)
+        type: curve_ref(is_le, self_ofs)
         repeat: expr
         repeat-expr: num_curves
 
   curve_ref:
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     params:
+      - id: is_le
+        type: bool
       - id: base_ofs
         type: s4
     seq:
@@ -234,16 +321,23 @@ types:
     instances:
       curve:
         pos: base_ofs + ofs_curve
-        type: curve(base_ofs + ofs_curve)
-
+        type: curve(is_le, base_ofs + ofs_curve)
   curve:
+    params:
+      - id: is_le
+        type: bool
+      - id: self_ofs
+        type: s4
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: |
       One animated channel. `target` selects which property of the tag's
       kind is driven; for `FLVC`, 0 to 15 are the four corner colours and
       16 is the pane's own alpha.
-    params:
-      - id: self_ofs
-        type: s4
     seq:
       - id: index
         type: u1
@@ -267,18 +361,27 @@ types:
     instances:
       keys_hermite:
         pos: self_ofs + ofs_keys
-        type: key_hermite
+        type: key_hermite(is_le)
         repeat: expr
         repeat-expr: num_keys
         if: curve_type == curve_kind::hermite
       keys_step:
         pos: self_ofs + ofs_keys
-        type: key_step
+        type: key_step(is_le)
         repeat: expr
         repeat-expr: num_keys
         if: curve_type == curve_kind::step
 
   key_hermite:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: |
       Frame, value and tangent. Values are in the target's own units, so
       an alpha curve runs 0 to 255 rather than 0 to 1.
@@ -291,6 +394,15 @@ types:
         type: f4
 
   key_step:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: |
       Used by discrete channels such as visibility and texture pattern:
       the value holds until the next key.

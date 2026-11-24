@@ -2,13 +2,13 @@ meta:
   id: mobiclip_mods
   file-extension: mods
   endian: le
-  doc: |
-    Nintendo DS Mobiclip video container (.mods / MODSN3).
-    Uses YCgCo colorspace (NOT YCbCr). Feeding YCbCr produces the classic
-    "everything is green" bug.
-    Audio is embedded as trailing bytes inside each video chunk — there are
-    no separate audio chunks.
-    All chunk payloads and frame offsets must be 4-byte aligned for DS hardware.
+doc: |
+  Nintendo DS Mobiclip video container (.mods / MODSN3).
+  Uses YCgCo colorspace (NOT YCbCr). Feeding YCbCr produces the classic
+  "everything is green" bug.
+  Audio is embedded as trailing bytes inside each video chunk — there are
+  no separate audio chunks.
+  All chunk payloads and frame offsets must be 4-byte aligned for DS hardware.
 seq:
   - id: magic
     contents: [0x4D, 0x4F, 0x44, 0x53, 0x4E, 0x33]

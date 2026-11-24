@@ -2,15 +2,15 @@ meta:
   id: mobiclip_moflex
   file-extension: moflex
   endian: be
-  doc: |
-    3DS/DSi Mobiclip live-streaming container (.moflex).
-    Used by 3DS eShop trailers, BOSS video, Nintendo Video.
-    Blocks are exactly 4096 bytes — the 3DS firmware uses a fixed 4096-byte
-    read buffer and 2048-byte blocks crash real hardware.
-    A sync header repeats the full descriptor list roughly once per second.
-    A video frame must never span a sync-counter change.
-    3DS stereoscopic 3D is a single video stream with a layout byte in
-    type-3 descriptors (not two separate streams).
+doc: |
+  3DS/DSi Mobiclip live-streaming container (.moflex).
+  Used by 3DS eShop trailers, BOSS video, Nintendo Video.
+  Blocks are exactly 4096 bytes — the 3DS firmware uses a fixed 4096-byte
+  read buffer and 2048-byte blocks crash real hardware.
+  A sync header repeats the full descriptor list roughly once per second.
+  A video frame must never span a sync-counter change.
+  3DS stereoscopic 3D is a single video stream with a layout byte in
+  type-3 descriptors (not two separate streams).
 seq:
   - id: magic
     contents: [0x4C, 0x32]

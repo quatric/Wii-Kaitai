@@ -1,12 +1,12 @@
 meta:
   id: votes_first_data
-  doc: |
-    Everybody Votes Channel first_data.bin format.
-    Validations: filesize field must equal actual length; size >= 0x17 and < 0x801.
-    CRC32 is standard reflected CRC32 computed over 0x0C to end.
   file-extension: bin
   application: Everybody Votes Channel
   endian: be
+doc: |
+  Everybody Votes Channel first_data.bin format.
+  Validations: filesize field must equal actual length; size >= 0x17 and < 0x801.
+  CRC32 is standard reflected CRC32 computed over 0x0C to end.
 seq:
   - id: version
     type: u4

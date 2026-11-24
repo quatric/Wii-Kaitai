@@ -1,13 +1,13 @@
 meta:
   id: ninch_dllist_v3
-  doc: |
-    Nintendo Channel Master Catalog (v4 / v6).
-    Header is 0x95 bytes (DLlist_header_v4). Files are big-endian (UTF-16BE strings).
-    CRC32 is standard reflected CRC32 over the file with bytes 0x08-0x0B zeroed.
   file-extension:
     - bin
     - LZ
   endian: be
+doc: |
+  Nintendo Channel Master Catalog (v4 / v6).
+  Header is 0x95 bytes (DLlist_header_v4). Files are big-endian (UTF-16BE strings).
+  CRC32 is standard reflected CRC32 over the file with bytes 0x08-0x0B zeroed.
 seq:
   - id: unknown
     type: u2

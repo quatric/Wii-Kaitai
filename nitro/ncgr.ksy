@@ -13,6 +13,11 @@ doc: |
 seq:
   - id: magic
     contents: "RGCN"
+  - id: bom
+    type: u2
+    doc: Byte-order mark (0xFEFF stored little-endian; 0 in some NCGR files).
+  - id: version
+    type: u2
   - id: file_size
     type: u4
   - id: header_size
@@ -42,6 +47,9 @@ types:
       - id: depth
         type: u4
         doc: 3 = 4bpp, 4 = 8bpp.
+      - id: unknown_pad
+        type: u4
+        doc: Two u16 fields, zero in every sample.
       - id: mapping
         type: u4
         doc: |

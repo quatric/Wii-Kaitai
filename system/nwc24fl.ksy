@@ -24,23 +24,24 @@ seq:
     repeat-expr: max_entries
 types:
   friend_list:
-    - id: address_type
-      type: u4
-      doc: 1 if Wii Number. 2 if E-Mail.
-    - id: friend_relation_status
-      type: u4
-      doc: 1 if unconfirmed (E-mail is always 1). 2 if confirmed. 3 if declined.
-    - id: nickname
-      type: str
-      size: 24
-      encoding: utf-16be
-    - id: mii_id
-      type: u4
-    - id: system_id
-      type: u4
-    - id: reserved
-      type: u4
-      repeat: expr
-      repeat-expr: 6
-    - id: mail_address
-      size: 256
+    seq:
+      - id: address_type
+        type: u4
+        doc: 1 if Wii Number. 2 if E-Mail.
+      - id: friend_relation_status
+        type: u4
+        doc: 1 if unconfirmed (E-mail is always 1). 2 if confirmed. 3 if declined.
+      - id: nickname
+        type: str
+        size: 24
+        encoding: utf-16be
+      - id: mii_id
+        type: u4
+      - id: system_id
+        type: u4
+      - id: reserved
+        type: u4
+        repeat: expr
+        repeat-expr: 6
+      - id: mail_address
+        size: 256

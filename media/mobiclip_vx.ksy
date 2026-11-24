@@ -2,14 +2,14 @@ meta:
   id: mobiclip_vx
   file-extension: vx
   endian: le
-  doc: |
-    Nintendo DS Actimagine VX video container (.vx / VXDS).
-    Uses a completely different, older codec than MobiClip.
-    Colorspace is neither YCbCr nor YCgCo — a shift-based YCoCg-ish approximation.
-    Standard H.264 CAVLC residuals. 24 macroblock modes.
-    One global quantizer for the whole file (valid range 12-161).
-    Hardware alignment: (frame_data_size + 2) % 4 == 0 required,
-    otherwise audio desynchronizes (perfect video, white-noise static).
+doc: |
+  Nintendo DS Actimagine VX video container (.vx / VXDS).
+  Uses a completely different, older codec than MobiClip.
+  Colorspace is neither YCbCr nor YCgCo — a shift-based YCoCg-ish approximation.
+  Standard H.264 CAVLC residuals. 24 macroblock modes.
+  One global quantizer for the whole file (valid range 12-161).
+  Hardware alignment: (frame_data_size + 2) % 4 == 0 required,
+  otherwise audio desynchronizes (perfect video, white-noise static).
 seq:
   - id: magic
     contents: "VXDS"

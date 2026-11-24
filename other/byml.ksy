@@ -67,6 +67,16 @@ seq:
         '"BY"': body(false)
         '"YB"': body(true)
 types:
+  u24:
+    params:
+      - id: is_le
+        type: bool
+    seq:
+      - id: b
+        size: 3
+    instances:
+      value:
+        value: 'is_le ? b[0] + (b[1] << 8) + (b[2] << 16) : (b[0] << 16) + (b[1] << 8) + b[2]'
   body:
     params:
       - id: is_le
@@ -95,15 +105,19 @@ types:
           `root_node_off` and `path_table_off` below.
       - id: field4
         type: u4
-        if: _io.size >= 20
+        if: '(hash_key_table_off != 0 ? hash_key_table_off : str_table_off) >= 0x14'
         doc: >
-          Present only in files large enough to carry it; when the layout
+          Present only when the first table starts at 0x14 or later (a v1-v7 header is otherwise 16 bytes); when the layout
           turns out to support paths this is the real root node offset.
     instances:
+      path_probe:
+        io: _root._io
+        pos: field3
+        type: u1
+        if: field3 != 0 and field3 + 4 <= _io.size
+        doc: Type byte at field3, used to tell a path array (0xc3) from a root node.
       supports_paths:
-        value: >
-          field4 != null
-          and (field3 == 0 or (field3 + 4 <= _io.size and hash_key_table.io.read_u1 == 0xc3))
+        value: _io.size >= 20 and (field3 == 0 or (field3 + 4 <= _io.size and path_probe == 0xc3))
         doc: >
           Heuristic used by the decoder: field3 is either 0 or a valid
           PATH_ARRAY (0xc3) node, and field4 points at a valid container
@@ -116,31 +130,54 @@ types:
       hash_key_table:
         io: _root._io
         pos: hash_key_table_off
-        type: string_table
+        type: string_table(is_le, hash_key_table_off)
         if: hash_key_table_off != 0
         doc: Dictionary of map key names, indexed by the 24-bit key index stored in each map entry.
       value_string_table:
         io: _root._io
         pos: str_table_off
-        type: string_table
+        type: string_table(is_le, str_table_off)
         if: str_table_off != 0
         doc: Dictionary of string-node values, indexed by the u32 stored in a 0xa0 node.
       path_table:
         io: _root._io
         pos: path_table_off
-        type: path_array
+        type: path_array(is_le)
         if: 'supports_paths and path_table_off != 0'
+      root_tag:
+        io: _root._io
+        pos: root_node_off
+        type: u1
+        if: root_node_off < _io.size
+        doc: Container type byte at the root offset (0xc0 array, 0xc1 map, 0x20/0x30 hashmap32, 0x21/0x31 hashmap64).
       root_node:
         io: _root._io
         pos: root_node_off
-        type: node
+        type:
+          switch-on: root_tag
+          cases:
+            0xc0: array_node(is_le)
+            0xc1: map_node(is_le)
+            0x20: hashmap32_node(is_le)
+            0x30: hashmap32_node(is_le)
+            0x21: hashmap64_node(is_le)
+            0x31: hashmap64_node(is_le)
         if: root_node_off < _io.size
-        doc: The root value of the document; almost always an array, map, or hashmap.
+        doc: The root container of the document (the offset points at the container header itself, not at a type/value slot).
 
   # A "slot" as stored inside a container: a 1-byte type tag plus a 4-byte
   # value-or-offset. What the value means depends on the type tag, exactly
   # as in byml_parse_binary_node() in the reference decoder.
   node:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     seq:
       - id: type
         type: u1
@@ -172,22 +209,22 @@ types:
         type:
           switch-on: type
           cases:
-            node_type::array: array_node
-            node_type::map: map_node
-            node_type::hashmap32: hashmap32_node
-            node_type::reloc_hashmap32: hashmap32_node
-            node_type::hashmap64: hashmap64_node
-            node_type::reloc_hashmap64: hashmap64_node
+            node_type::array: array_node(is_le)
+            node_type::map: map_node(is_le)
+            node_type::hashmap32: hashmap32_node(is_le)
+            node_type::reloc_hashmap32: hashmap32_node(is_le)
+            node_type::hashmap64: hashmap64_node(is_le)
+            node_type::reloc_hashmap64: hashmap64_node(is_le)
         if: is_container
       as_binary:
         io: _root._io
         pos: value_raw
-        type: binary_blob
+        type: binary_blob(is_le)
         if: type == node_type::binary
       as_binary_aligned:
         io: _root._io
         pos: value_raw
-        type: binary_blob_aligned
+        type: binary_blob_aligned(is_le)
         if: type == node_type::binary_aligned
       as_int64:
         io: _root._io
@@ -206,6 +243,15 @@ types:
         if: type == node_type::double_
 
   binary_blob:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     seq:
       - id: len
         type: u4
@@ -213,6 +259,15 @@ types:
         size: len
 
   binary_blob_aligned:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     seq:
       - id: len
         type: u4
@@ -222,6 +277,15 @@ types:
         size: len
 
   array_node:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: >
       Header of an ARRAY (0xc0) node: count type tags (padded to a
       multiple of 4 bytes), then `count` u32 values, each paired
@@ -230,8 +294,8 @@ types:
       - id: type
         type: u1
         enum: node_type
-      - id: count
-        type: b24
+      - id: count_raw
+        type: u24(is_le)
       - id: child_types
         type: u1
         enum: node_type
@@ -241,19 +305,43 @@ types:
         type: u4
         repeat: expr
         repeat-expr: count
+    instances:
+      count:
+        value: count_raw.value
 
   map_entry:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     seq:
-      - id: key_index
-        type: b24
-        doc: Index into the enclosing file's hash-key string table.
+      - id: key_index_raw
+        type: u24(is_le)
       - id: type
         type: u1
         enum: node_type
       - id: value_raw
         type: u4
+    instances:
+      key_index:
+        value: key_index_raw.value
+        doc: Index into the enclosing file's hash-key string table.
 
   map_node:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: >
       Header of a MAP (0xc1) node: count entries, each a 3-byte key-table
       index + 1-byte type tag + u32 value, sorted by key hash in the
@@ -262,14 +350,26 @@ types:
       - id: type
         type: u1
         enum: node_type
-      - id: count
-        type: b24
+      - id: count_raw
+        type: u24(is_le)
       - id: entries
-        type: map_entry
+        type: map_entry(is_le)
         repeat: expr
         repeat-expr: count
+    instances:
+      count:
+        value: count_raw.value
 
   hashmap32_entry:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     seq:
       - id: hash
         type: u4
@@ -277,6 +377,15 @@ types:
         type: u4
 
   hashmap32_node:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: >
       Header of a HASHMAP32/RELOC_HASHMAP32 (0x20/0x30) node: count
       {hash,value} pairs, followed by a parallel array of `count` type
@@ -285,10 +394,10 @@ types:
       - id: type
         type: u1
         enum: node_type
-      - id: count
-        type: b24
+      - id: count_raw
+        type: u24(is_le)
       - id: entries
-        type: hashmap32_entry
+        type: hashmap32_entry(is_le)
         repeat: expr
         repeat-expr: count
       - id: child_types
@@ -296,8 +405,20 @@ types:
         enum: node_type
         repeat: expr
         repeat-expr: count
+    instances:
+      count:
+        value: count_raw.value
 
   hashmap64_entry:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     seq:
       - id: hash
         type: u8
@@ -305,6 +426,15 @@ types:
         type: u4
 
   hashmap64_node:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: >
       Header of a HASHMAP64/RELOC_HASHMAP64 (0x21/0x31) node: count
       {hash,value} pairs (12 bytes each), followed by a parallel array of
@@ -313,10 +443,10 @@ types:
       - id: type
         type: u1
         enum: node_type
-      - id: count
-        type: b24
+      - id: count_raw
+        type: u24(is_le)
       - id: entries
-        type: hashmap64_entry
+        type: hashmap64_entry(is_le)
         repeat: expr
         repeat-expr: count
       - id: child_types
@@ -324,8 +454,23 @@ types:
         enum: node_type
         repeat: expr
         repeat-expr: count
+    instances:
+      count:
+        value: count_raw.value
 
   string_table:
+    params:
+      - id: is_le
+        type: bool
+      - id: base
+        type: s4
+        doc: Absolute offset of this table (the offsets are relative to it).
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: >
       Shared layout for the hash-key table, the value-string table, and
       (structurally) the path array: a type byte + 24-bit count, then
@@ -334,19 +479,43 @@ types:
     seq:
       - id: type
         type: u1
-      - id: count
-        type: b24
+      - id: count_raw
+        type: u24(is_le)
       - id: entry_offsets
         type: u4
         repeat: expr
         repeat-expr: count + 1
     instances:
+      count:
+        value: count_raw.value
       strings:
-        value: entry_offsets
-        doc: Resolve each entry by seeking to (table start + entry_offsets[i]) and reading a NUL-terminated string.
+        type: string_entry(_index)
+        repeat: expr
+        repeat-expr: count
+        doc: Entry i is the NUL-terminated string at (table start + entry_offsets[i]).
+
+  string_entry:
+    params:
+      - id: idx
+        type: s4
+    instances:
+      text:
+        io: _root._io
+        pos: _parent.base + _parent.entry_offsets[idx]
+        type: strz
+        encoding: UTF-8
 
   path_point:
-    doc: One point of a path/course: position, normal, and a game-defined value.
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
+    doc: 'One point of a path/course: position, normal, and a game-defined value.'
     seq:
       - id: x
         type: f4
@@ -364,18 +533,30 @@ types:
         type: u4
 
   path_array:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: >
       Same table shape as `string_table`, but each [start,end) byte range
       bounds a run of 28-byte `path_point`s instead of a string.
     seq:
       - id: type
         type: u1
-      - id: count
-        type: b24
+      - id: count_raw
+        type: u24(is_le)
       - id: entry_offsets
         type: u4
         repeat: expr
         repeat-expr: count + 1
+    instances:
+      count:
+        value: count_raw.value
 
 enums:
   node_type:

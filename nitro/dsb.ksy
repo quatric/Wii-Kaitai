@@ -2,7 +2,7 @@ meta:
   id: dsb
   file-extension: dsb
   endian: le
-  title: Nintendo DSB image (Animal Crossing: Wild World menu, DS)
+  title: 'Nintendo DSB image (Animal Crossing: Wild World menu, DS)'
 doc: |
   Small palettized image format tagged `TXTR`, used for Animal Crossing:
   Wild World's DS menu graphics. Despite the shared `TXTR` tag with other

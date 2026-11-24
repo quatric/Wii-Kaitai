@@ -2,9 +2,9 @@ meta:
   id: mpr_pii
   file-extension: bin
   endian: be
-  doc: |
-    My Pokémon Ranch (WiiWare) Ranch Model ("Pii") Table.
-    Stride 0x20 bytes per entry (~651 entries).
+doc: |
+  My Pokémon Ranch (WiiWare) Ranch Model ("Pii") Table.
+  Stride 0x20 bytes per entry (~651 entries).
 seq:
   - id: entries
     type: pii_entry

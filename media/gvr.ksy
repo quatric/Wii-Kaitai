@@ -15,15 +15,15 @@ seq:
   - id: gcix_magic
     contents: "GCIX"
   - id: gcix_chunk_size
-    type: u4
-    doc: Size of the GCIX chunk body that follows (in bytes).
+    type: u4le
+    doc: Size of the GCIX chunk body that follows (in bytes); little endian although the rest is big endian.
   - id: gcix_body
     size: gcix_chunk_size
     doc: Global index table; not decoded here.
   - id: gvrt_magic
     contents: "GVRT"
   - id: gvrt_chunk_size
-    type: u4
+    type: u4le
     doc: Size of the GVRT chunk body that follows (header + pixel data).
   - id: reserved
     size: 2

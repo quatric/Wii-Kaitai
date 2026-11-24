@@ -2,10 +2,10 @@ meta:
   id: mobiclip
   file-extension: mo
   endian: le
-  doc: |
-    Wii Mobiclip video container (.mo / MOC5).
-    Used by the Nintendo Channel, Wii no Ma, WiiLink, and in-game FMV.
-    See quatric/mobipeg for a full encode+decode implementation.
+doc: |
+  Wii Mobiclip video container (.mo / MOC5).
+  Used by the Nintendo Channel, Wii no Ma, WiiLink, and in-game FMV.
+  See quatric/mobipeg for a full encode+decode implementation.
 seq:
   - id: magic
     contents: "MOC5"

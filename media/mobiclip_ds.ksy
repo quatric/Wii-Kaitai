@@ -2,11 +2,11 @@ meta:
   id: mobiclip_ds
   file-extension: mods
   endian: le
-  doc: |
-    Legacy Kaitai for Nintendo DS Mobiclip (.mods).
-    Superseded by mobiclip_mods.ksy which has the correct 6-byte magic
-    and proper field offsets. This file is kept for compatibility.
-    See mobiclip_mods.ksy for the authoritative definition.
+doc: |
+  Legacy Kaitai for Nintendo DS Mobiclip (.mods).
+  Superseded by mobiclip_mods.ksy which has the correct 6-byte magic
+  and proper field offsets. This file is kept for compatibility.
+  See mobiclip_mods.ksy for the authoritative definition.
 seq:
   - id: magic
     contents: [0x4D, 0x4F, 0x44, 0x53, 0x4E, 0x33]

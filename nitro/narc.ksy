@@ -43,11 +43,12 @@ types:
           switch-on: magic
           cases:
             '"BTAF"': fatb_body
+            '"BTNF"': btnf_body
             '"FNTB"': btnf_body
   fatb_body:
     seq:
       - id: n_files
-        type: u4
+        type: u2
       - id: reserved
         type: u2
       - id: entries

@@ -3,9 +3,9 @@ meta:
   file-extension: dec
   application: Check Mii Out Channel (Wii Sports Resort)
   endian: be
-  doc: |
-    Note: The entry struct differs from standard documentation.
-    It may be specific to a memory dump from Wii Sports Resort.
+doc: |
+  Note: The entry struct differs from standard documentation.
+  It may be specific to a memory dump from Wii Sports Resort.
 seq:
   - id: opening_timestamp
     type: u4

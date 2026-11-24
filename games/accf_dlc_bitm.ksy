@@ -3,22 +3,22 @@ meta:
   file-extension: bitm
   application: Animal Crossing City Folk (Let's Go to the City)
   endian: be
-  doc: |
-    .bitm - a single downloadable item for Animal Crossing City Folk, 8192 bytes:
-    item parameters, a fixed-size ASH0-compressed BRRES resource slot, and a
-    trailing CRC-32.
+doc: |
+  .bitm - a single downloadable item for Animal Crossing City Folk, 8192 bytes:
+  item parameters, a fixed-size ASH0-compressed BRRES resource slot, and a
+  trailing CRC-32.
 
-    Source: this is NOT recovered from the retail game binary. It documents the
-    format as read and written by ACDLC, the community DLC item editor/creator
-    (Aurum's Mods). The distributed build ships no acdlc.py source - only a
-    PyInstaller build - so this was recovered by extracting the bundled
-    `bitm.py` module from the frozen app's PYZ archive and reading its Python
-    3.10 bytecode. ACDLC treats the BRRES resource block as opaque: it never
-    compresses or decompresses ASH0 itself, only carries the bytes through.
+  Source: this is NOT recovered from the retail game binary. It documents the
+  format as read and written by ACDLC, the community DLC item editor/creator
+  (Aurum's Mods). The distributed build ships no acdlc.py source - only a
+  PyInstaller build - so this was recovered by extracting the bundled
+  `bitm.py` module from the frozen app's PYZ archive and reading its Python
+  3.10 bytecode. ACDLC treats the BRRES resource block as opaque: it never
+  compresses or decompresses ASH0 itself, only carries the bytes through.
 
-    ACDLC's own field names are kept here even where they read like offsets into
-    a different, unpublished layout (`unk170`) - they are the tool's names, not
-    ours.
+  ACDLC's own field names are kept here even where they read like offsets into
+  a different, unpublished layout (`unk170`) - they are the tool's names, not
+  ours.
 
 seq:
   - id: header

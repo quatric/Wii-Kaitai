@@ -1,7 +1,6 @@
 meta:
   id: bflyt
   file-extension: bflyt
-  endian: le
   title: NintendoWare BFLYT layout
 doc: |
   The 3DS and Wii U successor to the Wii's BRLYT. Magic `FLYT`, a 20-byte
@@ -39,26 +38,48 @@ seq:
   - id: magic
     contents: "FLYT"
   - id: bom
-    type: u2
-    doc: 0xfeff read in this file's own order.
-  - id: len_header
-    type: u2
-    doc: 0x14.
-  - id: version
-    type: u4
-    doc: 0x07020100 across all 299 samples.
-  - id: len_file
-    type: u4
-  - id: num_sections
-    type: u2
-  - id: reserved
-    type: u2
-  - id: sections
-    type: section
-    repeat: expr
-    repeat-expr: num_sections
+    type: u2le
+    doc: Byte-order mark; bytes FF FE (read here as 0xFEFF) mean little endian (3DS), FE FF mean big endian (Wii U).
+  - id: body
+    type: body(bom == 0xfeff)
 types:
+  body:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
+    seq:
+      - id: len_header
+        type: u2
+        doc: 0x14.
+      - id: version
+        type: u4
+        doc: 0x07020100 across all 299 samples.
+      - id: len_file
+        type: u4
+      - id: num_sections
+        type: u2
+      - id: reserved
+        type: u2
+      - id: sections
+        type: section(is_le)
+        repeat: expr
+        repeat-expr: num_sections
   section:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     seq:
       - id: magic
         type: str
@@ -72,16 +93,16 @@ types:
         type:
           switch-on: magic
           cases:
-            '"lyt1"': layout
-            '"txl1"': string_list
-            '"fnl1"': string_list
-            '"mat1"': material_list
-            '"pan1"': pane
-            '"bnd1"': pane
-            '"pic1"': picture
-            '"txt1"': text_box
-            '"wnd1"': window
-            '"grp1"': group
+            '"lyt1"': layout(is_le)
+            '"txl1"': string_list(is_le)
+            '"fnl1"': string_list(is_le)
+            '"mat1"': material_list(is_le)
+            '"pan1"': pane(is_le)
+            '"bnd1"': pane(is_le)
+            '"pic1"': picture(is_le)
+            '"txt1"': text_box(is_le)
+            '"wnd1"': window(is_le)
+            '"grp1"': group(is_le)
         doc: |
           `pas1`, `pae1`, `grs1` and `gre1` are pure markers with no body
           and are always exactly 8 bytes. `prt1`, `cnt1` and `usd1` are
@@ -91,6 +112,15 @@ types:
           handing back the bytes.
 
   layout:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: |
       `lyt1`. Unlike BRLYT's, this one carries the layout's own name and
       the maximum size of any part that embeds it.
@@ -113,6 +143,15 @@ types:
         encoding: ASCII
 
   string_list:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: |
       Shared shape of `txl1` (textures) and `fnl1` (fonts). Offsets are
       relative to the start of the offset table, which is 12 bytes into
@@ -120,13 +159,24 @@ types:
       BRLYT's second, always-zero word is gone.
     seq:
       - id: num_entries
-        type: u4
+        type: u2
+      - id: reserved
+        type: u2
       - id: entries
-        type: string_ref
+        type: string_ref(is_le)
         repeat: expr
         repeat-expr: num_entries
 
   string_ref:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     seq:
       - id: ofs_name
         type: u4
@@ -138,6 +188,15 @@ types:
         encoding: ASCII
 
   material_list:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: |
       `mat1`. Offsets are relative to the start of the *section* -- tag
       included -- unlike the string lists above, so 8 is subtracted to
@@ -146,13 +205,24 @@ types:
       by per-material flags; only the name is broken out.
     seq:
       - id: num_materials
-        type: u4
+        type: u2
+      - id: reserved
+        type: u2
       - id: materials
-        type: material_ref
+        type: material_ref(is_le)
         repeat: expr
         repeat-expr: num_materials
 
   material_ref:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     seq:
       - id: ofs_material
         type: u4
@@ -166,6 +236,15 @@ types:
         pad-right: 0
 
   pane:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: |
       `pan1`, and identically `bnd1` -- a bounding pane, which takes part
       in the hierarchy and in hit-testing but draws nothing. Both are
@@ -194,9 +273,9 @@ types:
         encoding: ASCII
         pad-right: 0
       - id: translate
-        type: vec3
+        type: vec3(is_le)
       - id: rotate
-        type: vec3
+        type: vec3(is_le)
       - id: scale_x
         type: f4
       - id: scale_y
@@ -207,10 +286,19 @@ types:
         type: f4
 
   picture:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: '`pic1`: a textured quad, a pane followed by its corner colours and UVs.'
     seq:
       - id: base
-        type: pane
+        type: pane(is_le)
       - id: vertex_colors
         size: 16
         doc: Four RGBA8 corner colours -- top-left, top-right, bottom-left, bottom-right.
@@ -221,7 +309,7 @@ types:
       - id: reserved
         type: u1
       - id: tex_coords
-        type: tex_coord_set
+        type: tex_coord_set(is_le)
         repeat: expr
         repeat-expr: num_tex_coords
         doc: |
@@ -231,17 +319,34 @@ types:
           few three (200).
 
   tex_coord_set:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     seq:
       - id: top_left
-        type: vec2
+        type: vec2(is_le)
       - id: top_right
-        type: vec2
+        type: vec2(is_le)
       - id: bottom_left
-        type: vec2
+        type: vec2(is_le)
       - id: bottom_right
-        type: vec2
-
+        type: vec2(is_le)
   text_box:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: |
       `txt1`. As on the Wii the reserved length is stored before the used
       one, and both count bytes of UTF-16 rather than characters: a
@@ -249,7 +354,7 @@ types:
       the start of the section.
     seq:
       - id: base
-        type: pane
+        type: pane(is_le)
       - id: len_text_max
         type: u2
       - id: len_text
@@ -298,17 +403,35 @@ types:
         if: ofs_text >= 8
 
   window:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: |
       `wnd1`: a nine-patch frame. The pane header is typed; the inflation
       rectangle, frame count and per-frame material references that follow
       are sized by the frame count and are left raw.
     seq:
       - id: base
-        type: pane
+        type: pane(is_le)
       - id: rest
         size-eos: true
 
   group:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     doc: |
       `grp1`. Names its members rather than owning them; the runtime
       resolves the names against the pane tree. The 34-byte name is not a
@@ -332,6 +455,15 @@ types:
         repeat-expr: num_panes
 
   vec2:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     seq:
       - id: x
         type: f4
@@ -339,6 +471,15 @@ types:
         type: f4
 
   vec3:
+    params:
+      - id: is_le
+        type: bool
+    meta:
+      endian:
+        switch-on: is_le
+        cases:
+          true: le
+          false: be
     seq:
       - id: x
         type: f4

@@ -2,9 +2,9 @@ meta:
   id: mpr_special_offers
   file-extension: dat
   endian: be
-  doc: |
-    My Pokémon Ranch Special Pokémon Offers Table.
-    Stride 0x10 bytes per entry (27 slots).
+doc: |
+  My Pokémon Ranch Special Pokémon Offers Table.
+  Stride 0x10 bytes per entry (27 slots).
 seq:
   - id: offers
     type: offer_entry
