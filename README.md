@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- waf, waud, wiidir, wiiidarc, ws49pak, wsbl, wtmd, wtpak, wwb, wwisebnk, xar, xpac, ydsp, zap, wsistream
 - tpkbres, tpx, twi, timg, txm, u8ctext, uocc, unitedata, vliblib, vbkdsp, v1b
 - sfayyaf, slz, sntbank, sonicex, sonicone, stbltext, stme, sts, swd, tapsdat, tatepak, tdbtext, tdw, tdxs, tecmoad, tenchu_pack, terf
 - re4_drs, re_off, rmhg, rspa, rtdp_vld, rsc0, rkv2, ref_chnk, rockstar_gxt, scribble_index, sdd, stormfront_seg, sega_abst, sega_glip, sega_gtpa, sega_mscr, s3t, platinum_rsp, rcchr, scf
