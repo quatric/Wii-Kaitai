@@ -6,13 +6,13 @@ meta:
   endian: be
 doc: |
   Pose data for the group photo shown on the compatibility screen. It plays no part in the
-  compatibility rating itself (0x800DDAEC reads only the day's scores).
+  compatibility rating itself (that only reads the day's scores).
 
   Fifteen `(count, offset)` index entries = 3 ratings (0 normal, 1 good, 2 very good) x
   group sizes 2 to 6, entry number `rating * 5 + (size - 2)`. Each block holds `count`
   variants, and each variant is one 124-byte (0x7C) person record for each of the `size`
   people, so every block is exactly `count * size * 124` bytes (checked for all fifteen).
-  The console chooses the block by `rating * 0x28 + ...` (0x800DDF40) and a variant with
+  The console chooses the block by `rating * 0x28 + ...` and a variant with
   the game's RNG, `rand() % count`. Variants per rating: normal 1, good 2, very good 5
   (6 for groups of five). `affinity_eu.bin` is a re-tuned copy for the EU layouts.
 seq:

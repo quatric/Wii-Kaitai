@@ -8,17 +8,16 @@ meta:
 doc: |
   The planetary-position table behind every fortune. One 16-byte record per calendar day,
   1881-01-01 to 2036-12-31 inclusive: 56,978 records, 911,648 bytes. The console copies the
-  whole file into a static buffer at 0x80339A60 (0x80026A7C, 0xDE920 bytes) and finds a
-  record by walking from `(year - 1881) * 365` records (0x80026B7C, which also asserts
-  year 0x759..0x7F4, month 1..12, day 1..31).
+  whole file into a static buffer at 0x80339A60 (0xDE920 bytes) and finds a
+  record by walking from `(year - 1881) * 365` records (it also checks that
+  year is 0x759..0x7F4, month 1..12, day 1..31).
 
   Each record is a date and nine ecliptic longitudes in WHOLE degrees, nine bits each,
   packed three to a 32-bit word (27 bits used, 5 padding). The game extracts field n with
-  a generic n-bit reader (0x8005BB18, `field = word[n / 3] >> (32 - 9 - 9 * (n % 3))`).
+  a generic n-bit reader (`field = word[n / 3] >> (32 - 9 - 9 * (n % 3))`).
 
   The bands are the same ephemeris sampled at local midnight of a UTC offset:
-  A +1, B +2, I +9, K +10, M +12, Z 0 (the console country picks one by longitude,
-  0x800EC088). The European WAD ships A, B, K, M and Z; the Korean WAD ships I; the
+  A +1, B +2, I +9, K +10, M +12, Z 0 (the console country picks one by longitude). The European WAD ships A, B, K, M and Z; the Korean WAD ships I; the
   Japanese build embeds I in its main program at 0x80260E70.
 
   Field order (checked against a low-precision orbital model, mean error under 1 degree,

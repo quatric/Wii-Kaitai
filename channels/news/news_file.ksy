@@ -5,7 +5,7 @@ meta:
   doc: |
     news.bin - 0x68-byte header, then six tables.
 
-    Contract enforced by the console's validator (0x8000B1EC, USA v7):
+    Contract enforced by the console's validator:
       * version's high 16 bits must be zero
       * goo_flag and language_select_screen_flag must each be < 2
       * language_list is scanned for the first 0xFF; that index must be < 16, and every

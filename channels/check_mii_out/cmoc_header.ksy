@@ -24,9 +24,9 @@ doc: |
   Three of the list_tag values are category tags rather than record types. The console
   carries membership predicates for them:
 
-    XC (0x5843) "any artisan record" -> XC, PC, RC, CC     (isXC at 0x80079E08)
-    XM (0x584D) "any Mii record"     -> XM, PM, IM, CM     (isXM at 0x80079CFC)
-    XX (0x5858) "any record"         -> XX, plus all of XM and XC  (isXX at 0x80079C90)
+    XC (0x5843) "any artisan record" -> XC, PC, RC, CC
+    XM (0x584D) "any Mii record"     -> XM, PM, IM, CM
+    XX (0x5858) "any record"         -> XX, plus all of XM and XC
 
   Call sites test the category, not the concrete tag, which is how one display path
   handles Grab Bag, contest and ranking entries alike. A parser should never expect to

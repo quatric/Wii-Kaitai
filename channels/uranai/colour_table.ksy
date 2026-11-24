@@ -8,12 +8,12 @@ doc: |
   The runtime form of the lucky-colour data: 16,071 rows (2007-01-01 to 2050-12-31), 12
   bytes each - the date, then one 5-bit colour index (0-22) for each of the twelve zodiac
   signs, Aries first. The colour shown is the entry for the person's Sun sign,
-  `(sun_degree - 1) / 30` (0x80027578), in the row of the day (0x80027374; for dates outside
+  `(sun_degree - 1) / 30`, in the row of the day (for dates outside
   2007-2036 the row is `(day + (year << month)) % 16071`, a hash, not a lookup).
 
   The European build ships this as text (`color/wii_color_japanese_<band>.txt`, Shift-JIS,
   one `2007年 1月 1日,07,02,...` line per day) and parses it at start-up into a table at
-  0x802D5350 (0x8002768C). The Korean and Japanese builds embed the binary rows directly:
+  0x802D5350. The Korean and Japanese builds embed the binary rows directly:
   Korea at 0x80270C10, Japan at 0x80376D08, byte-identical, both band I (UTC+9).
 seq:
   - id: rows

@@ -8,7 +8,7 @@ meta:
     SIXTEEN (count, offset) pairs with no gaps; 0xA5 begins last_update, 0xE6 the
     1280-byte dl_url_ids block, and the header ends at 0x5EA.
 
-    Proven by the console's validator (0x80035F60 in the USA v1792 binary), which
+    Proven by the console's validator, which
     applies the same test to all sixteen pairs: if either word is non-zero, the offset
     must satisfy 0x5EA <= offset <= 0x1FC7CE. That 0x5EA lower bound is what pins the
     header size, and it matches the first table's offset in real catalogs exactly.

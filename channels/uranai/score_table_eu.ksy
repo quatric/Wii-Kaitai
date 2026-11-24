@@ -11,21 +11,20 @@ doc: |
   Tables 0-4 are the fortune topics in the order love, work, study, communications,
   money. The 360 entries of a table are the zodiac circle: entry `i` is sign `i / 30`,
   degree `i % 30 + 1`. The fortune index is `(natal planet + day's Moon) mod 360`
-  (0x80026E14), with 0 taken as 360 and entry `index - 1` used, and it selects both this
+  with 0 taken as 360 and entry `index - 1` used, and it selects both this
   entry's score and message number `topic * 360 + index - 1` of the text file.
 
   `score` is 10-20 and is the only thing scoring reads (capped at 20; on ~80% of dates a
-  hash flag cuts 13/12/11/10 to 6/4/2/0, see 0x80027010). Stars per topic: 10-11 one,
-  12-13 two, 14-15 three, 16-17 four, 18-20 five (0x80027250).
+  hash flag cuts 13/12/11/10 to 6/4/2/0). Stars per topic: 10-11 one,
+  12-13 two, 14-15 three, 16-17 four, 18-20 five.
 
-  The six `line_pointers` are NOT in the shipped file: the text loader (0x80026ACC) splits
+  The six `line_pointers` are NOT in the shipped file: the text loader splits
   the fortune text in place into up to six tab-terminated UTF-16 lines and stores their
   addresses here at start-up. Its outer loop runs over topics 0-4 only.
 
   Table 5 (natal Sun) exists in every build and carries a pointer to a Japanese one-liner
   in its first line pointer, but nothing reads it: every caller of the score lookup
-  (0x80042A3C, 0x8005ED90, 0x8005FA3C, 0x80091C48, 0x80094F78, 0x80097144, 0x800B6B44,
-  and the hint and compatibility code) loops over topics 0-4 or passes a constant 0-4.
+  (including the hint and compatibility code) loops over topics 0-4 or passes a constant 0-4.
 seq:
   - id: topics
     type: topic
