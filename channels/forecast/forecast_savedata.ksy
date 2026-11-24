@@ -5,113 +5,64 @@ meta:
   file-extension: dat
   endian: be
 doc: |
-  The Forecast Channel's entire save file. 32 bytes, stored uncompressed and
-  unencrypted at:
+  The Forecast Channel's save file.
 
-      /title/00010002/48414645/data/noerase/savedata.dat
+  It remembers which city you picked and your unit choices (Celsius or
+  Fahrenheit, km/h or mph). That's all. It never holds weather data.
 
-  It holds the chosen city and the two unit toggles - nothing else. Weather data
-  itself is cached separately in Forecast.dat and wc24dl.vff.
+  It lives at /title/00010002/48414645/data/noerase/savedata.dat and is exactly
+  32 bytes, not compressed or encrypted. The Wii Menu banner reads it too.
 
-  The Wii Menu banner (00000005.app -> arc/banner.rso) reads this file too. It
-  takes the first data directory that exists among HAFJ, HAFE and HAFP, checks
-  only the CRC (rso+0x2550), and then uses location_key and temperature_unit. It
-  does not check the label or region_word.
+  If the file is damaged (bad checksum or label), the channel ignores it and
+  asks for a city again. If it was saved on a console from another region, the
+  channel keeps the file but forgets the city. Nothing is fatal.
 
-  Validation, in the order the console applies it (loader at 0x8000BAD4):
+  Every field is always filled in, so there are no "unused" markers here.
 
-    1. CRC-32 over bytes 0x00-0x1B compared against the trailer (0x8000BB84).
-       Failure prints "NAND data broken."
-    2. The four label bytes, one at a time, against the constant "HAF0" stored
-       at 0x803319E8 (0x8000BBB0-0x8000BC44).
-       Failure prints "NAND data invalid label."
-    3. region_word compared against the console's own (0x8000FFA4).
-       Mismatch does not reject the file - it just discards the saved city.
-
-  Neither failure is fatal. A rejected save means the channel asks the user to
-  pick a city again.
-
-  The News Channel uses this exact container with the label "HAG0" and a
-  different payload; see news/news_savedata.ksy.
+  Deep technical notes (addresses, validation rules): https://gist.github.com/quatric/23267cf80416303da28ef186551a88df
 seq:
   - id: label
     contents: 'HAF0'
-    doc: |
-      Written one byte at a time at 0x8000BDD0 as 0x48 0x41 0x46 0x30. "HAF" is
-      the channel's title ID prefix; "0" appears to be a format version, though
-      nothing in the binary accepts any other value.
+    doc: Always "HAF0". The channel checks it.
   - id: region_word
     type: u4
     doc: |
-      The console region word (r13-0x6A08) at the time of the save, whose TOP
-      BYTE is the country code - the same value the download URL formats with
-      %03d after `srwi r30, r0, 0x18` at 0x8000ACAC.
-
-      On load this must equal the console's current region word or the saved
-      location is ignored. So the save is keyed to the whole region word:
-      change region and the stored city is discarded rather than misresolved.
+      The console's region when the file was saved. The top byte is the country
+      code (see `console_country_code`). If it doesn't match the console now, the
+      saved city is ignored.
   - id: location_key
     type: location_key
     doc: |
-      The selected city. Looked up by 0x80020300, which walks the location
-      table comparing the first u32 of each entry against this field - so it is
-      directly comparable to the packed key every table in forecast.bin and
-      short.bin begins with.
-
-      When no valid save exists this defaults to the bare region word
-      (0x8000E0E4), which is why a fresh console lands on the country rather
-      than on a city.
+      The city you picked. Matches the key at the start of the entries in
+      forecast.bin and short.bin. With no save, this is just the console's region
+      word, so a new console starts on the country instead of a city.
   - id: temperature_unit
     type: u4
     enum: temp_unit
-    doc: |
-      Toggled at 0x80028714 with the cntlzw/srwi-5 logical-NOT idiom, so only
-      0 and 1 ever occur.
-
-      Default, when there is no valid save, comes from forecast.bin's
-      region_flag (header +0x19), not a console region byte: FUN_8000E078 reads
-      it through the loaded file (`lwz r3, 0x28(r3)`; `lbz r0, 0x19(r3)` at
-      0x8000E0EC). region_flag 1 gives (temperature, wind) = (1, 0); 0 or 2 gives
-      (0, 1).
-
-      Polarity is now pinned by the channel's Wii Menu banner (banner.rso),
-      which reads this same field. 0 selects the Celsius bytes and shows the
-      `ondo_C` pane; non-zero selects the Fahrenheit bytes and shows `ondo_F`.
-      The banner reads only temperature_unit; it shows no wind.
+    doc: 0 = Celsius, 1 = Fahrenheit. The Wii Menu banner uses this too.
   - id: wind_speed_unit
     type: u4
     enum: wind_unit
-    doc: |
-      Toggled at 0x80028754, and gated on the console language byte being
-      non-zero (lbz r0, -0x6A0A(r13) at 0x80028734) - so this toggle is not
-      offered on Japanese systems.
-
-      Polarity is exact, from the rendering code at 0x8001E1DC: value 0 reads
-      the long entry's +0x18 (mph), value 1 reads +0x17 (km/h).
+    doc: 0 = mph, 1 = km/h. Not offered on Japanese consoles.
   - id: reserved
     size: 8
     doc: |
-      Eight bytes that no code path reads and no code path writes. The buffer is
-      allocated with `li r3, 0x20; li r4, 0x20; bl 0x80032580` at 0x8000D8F8 and
-      the save routine fills only 0x00-0x13 plus the trailer, so on a first save
-      these carry whatever the allocator left behind.
-
-      The CRC covers them. Write zeros, and do not assume a retail save has
-      zeros here.
+      Never read or written on purpose, so a real save can hold leftover junk
+      here. It still counts toward the checksum. Write zeros.
   - id: checksum
     type: u4
     doc: |
-      CRC-32 over bytes 0x00-0x1B - standard reflected CRC-32: polynomial
-      0xEDB88320, initial value 0xFFFFFFFF, final inversion (`nor r3, r8, r8`
-      at 0x80067E70). Implemented nibble-at-a-time at 0x80067D44 with the
-      16-entry table at 0x80193D60, whose first words are 00000000 1DB71064
-      3B6E20C8 26D930AC.
+      CRC-32 of the first 0x1C bytes (the standard zlib one). If it doesn't
+      match, the channel says "NAND data broken" and ignores the file.
+instances:
+  console_country_code:
+    value: region_word >> 24
+    doc: The console's country code. Same numbers as `country_code` in forecast_file.ksy.
 types:
   location_key:
     doc: |
-      The packed location key, identical in layout to the first four bytes of
-      every forecast.bin and short.bin table entry. Compared as a single
-      big-endian u4 by the console.
+      A city's ID. Three numbers that together pick one city. The same four
+      bytes start every city entry in forecast.bin and short.bin.
     seq:
       - id: country_code
         type: u1

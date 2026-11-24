@@ -1,200 +1,164 @@
 meta:
   id: forecast_file
+  title: Forecast Channel - forecast.bin
   file-extension: bin
   application: Forecast Channel
   endian: be
 doc: |
-  forecast.bin - 0x58-byte header, then seven independently located tables.
+  forecast.bin: the weather forecast for every city.
 
-  Nintendo's own names for the tables, recovered from the validator string pool in
-  the retail binary (0x80199D10 onward) where they appear in header-field order:
-    message_offset          -> ERROR_MESSAGE_e
-    long_forecast_table     -> WeatherForecasts  (cities in the console's own country)
-    short_forecast_table    -> WeatherSummary    (cities elsewhere)
-    weather_condition_codes -> WeatherType
-    uv_index_table          -> UVIndex
-    laundry_index_table     -> LaundryIndex
-    pollen_count_table      -> PollenIndex
-    location_table          -> Places
+  The file is a header followed by seven tables. The header says where each
+  table starts and how many entries it has.
 
-  WARNING: short_forecast_table is the international SUMMARY list inside THIS file.
-  It is not short.bin, which is a separate file whose table Nintendo calls WeatherNow
-  (see forecast_file_short.ksy). Conflating the two - usually by noticing that the
-  summary entry is 0x48 bytes and assuming that is short.bin's stride - is the most
-  common error in third-party documentation of this format.
+    long_forecast_table            cities in the console's own country (full forecast)
+    short_forecast_table           cities in other countries (today and tomorrow only)
+    weather_condition_codes_table  weather code -> icon number and name
+    uv_index_table                 UV code -> text
+    laundry_index_table            laundry code -> text (Japan only)
+    pollen_count_table             pollen code -> text (Japan only)
+    location_table                 the list of cities
 
-  Laundry and pollen indices are only validated when the console's region word
-  (r13-0x6A04) is zero, i.e. on Japanese consoles.
+  Good to know:
+    * Times are minutes since 1 January 2000 (UTC). The `*_unix` fields convert them.
+    * The file is stored LZ10-compressed. Everything here describes the
+      decompressed file.
+    * short_forecast_table is NOT the file short.bin. short.bin is a separate
+      file for current weather (see forecast_file_short.ksy).
+    * The channel rejects the whole file if the checksum, size, language or
+      any code lookup is wrong, and shows error FORE000006.
 
-  Two retail readers parse this file: the channel (00000001.app, validator
-  FUN_8000C734) and the channel's Wii Menu banner module (00000005.app ->
-  arc/banner.rso, which keeps its symbols). Addresses written rso+0x... are file
-  offsets into banner.rso.
+  "UNUSED" MARKERS. When a field has nothing to say, it is filled with an
+  all-ones value instead of 0. Check for it before using the field:
 
-  Storage: WiiConnect24 keeps this file LZ10-compressed as "3.bin" inside
-  data/wc24dl.vff. The download IDs 3 (forecast.bin) and 4 (short.bin) are
-  hard-coded at 0x800327CC/0x800327D4, and the task file name is
-  sprintf("%d.bin", id) (0x80035348). Both tasks poll every 30 minutes. The
-  banner decompresses into a 0x32000-byte buffer, so a decompressed forecast.bin
-  over 200 KiB breaks the Wii Menu tile.
+    Field                                     Means "unused" when it is
+    ----------------------------------------  --------------------------
+    weather codes (forecast, six_hour_forecast)   0xFFFF
+    precipitation (six_hour_precipitation, week)  0xFF
+    temperatures (high_*, low_*)                  -128
+    wind_direction                                0xFF  (`unused` in the enum)
+    uv_index, laundry_index, pollen_count         0xFF  (`unused` in the enum)
+    message_offset                                0
+    region_text_offset, country_text_offset       0
 
-  The validator returns a status per file: 0 OK, -1 corrupt, -2 expired, -3
-  unsupported version. An expired cache is re-downloaded at once. A -3 goes
-  straight to the error screen. Any failure of a freshly downloaded file is
-  FORE000006.
-
-  Structural rules beyond the per-field ones documented below (all reject the
-  file):
-    * long_forecast_entry_number and short_forecast_entry_number are not both 0;
-      weather_condition_codes_entry_number and location_entry_number are not 0;
-      any non-zero count has a non-zero offset (FUN_8001FB94).
-    * weather_icon_code_1, each index code (UV/laundry/pollen) and each location
-      key are unique within their tables.
-    * Every location_table row is referenced by a long entry, a summary entry or
-      a short.bin entry (0x8000CF64). An unreferenced city rejects the file.
-    * Every text offset is < filesize and even.
-
+  Deep technical notes (addresses, validation rules): https://gist.github.com/quatric/23267cf80416303da28ef186551a88df
 seq:
   - id: version
     type: u4
-    doc: |
-      Always 0. The top 16 bits are a format-version gate: non-zero gives
-      validator status -3 (`clrrwi.` at 0x8000C8E4), and the channel goes to the
-      error screen without trying a re-download. The banner refuses it too
-      (rso+0x2908).
+    doc: Always 0. Anything else and the channel gives up on the file.
   - id: filesize
     type: u4
-    doc: Must equal the decompressed size.
+    doc: Size of the whole file, after decompressing.
   - id: crc32
     type: u4
-    doc: zlib CRC-32 over 0x0C..EOF (0x8000C90C).
+    doc: CRC-32 checksum of everything after this field.
   - id: opening_timestamp
     type: u4
-    doc: |
-      Timestamp is minutes since 2000 (UTC). No reader found in the channel or
-      the banner.
+    doc: When the file was made (minutes since 2000, UTC). The channel doesn't use it.
   - id: closing_timestamp
     type: u4
     doc: |
-      Timestamp is minutes since 2000 (UTC). An expiry: once UTC now passes it,
-      the validator returns -2 (0x8000C95C). The channel then discards its cache
-      and re-downloads; an expired *download* is FORE000006. The banner shows its
-      "Unable to obtain the latest forecast update" message (rso+0x2924). WiiLink
-      writes opening + 90; WiiConnect24 polls every 30 minutes, so that tolerates
-      two missed polls.
+      When the file expires (minutes since 2000, UTC). After this the channel
+      throws the file away and downloads a new one. WiiLink sets it to opening + 90.
   - id: country_code
     type: u1
     enum: country_code
+    doc: The country this file is for.
   - id: unknown_1
     type: u1
     repeat: expr
     repeat-expr: 3
-    doc: |
-      Confirmed unread: `FUN_8000c734` (0x8000c734) touches header byte offsets 0x19
-      (`region_flag`, ≤2) and 0x1A (`unknown_2`, ≤1) but never this range in between.
-      Genuine padding between `country_code` and `language_code`.
+    doc: Padding. Never read.
   - id: language_code
     type: u1
     enum: language_code
     doc: |
-      Must equal the console language byte (r13-0x6A0A, compared at 0x8000C964).
-      A mismatch is status -1 (FORE000006 for a fresh download), and the banner
-      blanks too (rso+0x2938). Servers have to serve one file per language.
+      Language of the text in the file. Must match the console's language, or
+      the channel rejects the file. So there is one file per language.
   - id: region_flag
     type: u1
     enum: region_flag
     doc: |
-      Validated as <= 2. Sets the default units when there is no valid save
-      (FUN_8000E078, `lbz r0, 0x19(r3)` at 0x8000E0EC): 1 -> Fahrenheit + mph,
-      0 or 2 -> Celsius + km/h. See forecast_savedata.ksy.
+      Picks the default units when the user hasn't saved a choice:
+      fahrenheit = Fahrenheit and mph, celsius or japan = Celsius and km/h.
   - id: unknown_2
     type: u1
-    doc: |
-      Validated at 0x8000C9C8 as `<= 1` (boolean). Validated but never acted on.
-      An instruction-level scan of the channel's game code finds eight
-      `lbz ..., 26(rN)` loads. This is the only one on the header; the rest are
-      day-block bytes, a video-mode struct and graphics code. The banner does not
-      read it either. WiiLink writes 1; 0 is equally legal.
+    doc: Must be 0 or 1. Checked, but nothing uses it. WiiLink writes 1.
   - id: padding
     type: u1
   - id: message_offset
     type: u4
     doc: |
-      Offset of a UTF-16BE service message, or 0. Must be < filesize and even
-      (0x8000C978). When non-zero, the forecast is replaced by the message:
-        * the validator skips every table check, and skips short.bin entirely;
-        * the channel goes to the error screen and prints the string in
-          error0.brlyt's `error_server` pane (FUN_8000B46C);
-        * the NUL must come within 0x200 code units (`cmpwi r3, 512` at
-          0x8000B19C), so the text is at most 511 characters. A longer or
-          unterminated string shows FORE000006 instead;
-        * the Wii Menu banner shows its "unable to obtain" message (rso+0x29D8).
-  - id: long_forecast_entry_number
-    type: u4
-  - id: long_forecast_table_offset
-    type: u4
-  - id: short_forecast_entry_number
-    type: u4
-  - id: short_forecast_table_offset
-    type: u4
-  - id: weather_condition_codes_entry_number
-    type: u4
-  - id: weather_condition_codes_table_offset
-    type: u4
-  - id: uv_index_entry_number
-    type: u4
-  - id: uv_index_table_offset
-    type: u4
-  - id: laundry_index_entry_number
-    type: u4
-  - id: laundry_index_table_offset
-    type: u4
-  - id: pollen_count_entry_number
-    type: u4
-  - id: pollen_count_table_offset
-    type: u4
-  - id: location_entry_number
-    type: u4
-  - id: location_table_offset
-    type: u4
+      Where a service message (UTF-16BE text) starts, or 0 for none. If set, the
+      channel shows this message instead of the forecast. Keep it under 512
+      characters.
+  - id: long_forecast_pointer
+    type: table_pointer
+    doc: The long_forecast_table.
+  - id: short_forecast_pointer
+    type: table_pointer
+    doc: The short_forecast_table.
+  - id: weather_condition_codes_pointer
+    type: table_pointer
+    doc: The weather_condition_codes_table. Can't be empty.
+  - id: uv_index_pointer
+    type: table_pointer
+    doc: The uv_index_table.
+  - id: laundry_index_pointer
+    type: table_pointer
+    doc: The laundry_index_table.
+  - id: pollen_count_pointer
+    type: table_pointer
+    doc: The pollen_count_table.
+  - id: location_pointer
+    type: table_pointer
+    doc: The location_table. Can't be empty.
 instances:
+  opening_unix:
+    value: (opening_timestamp + 15778080) * 60
+    doc: The time the file was made as a normal Unix time (seconds since 1970).
+  closing_unix:
+    value: (closing_timestamp + 15778080) * 60
+    doc: The time the file expires as a normal Unix time (seconds since 1970).
   long_forecast_table:
-    pos: long_forecast_table_offset
+    pos: long_forecast_pointer.offset
     type: long_forecast_table
     repeat: expr
-    repeat-expr: long_forecast_entry_number
+    repeat-expr: long_forecast_pointer.entry_count
   short_forecast_table:
-    pos: short_forecast_table_offset
+    pos: short_forecast_pointer.offset
     type: short_forecast_table
     repeat: expr
-    repeat-expr: short_forecast_entry_number
+    repeat-expr: short_forecast_pointer.entry_count
   weather_condition_codes_table:
-    pos: weather_condition_codes_table_offset
+    pos: weather_condition_codes_pointer.offset
     type: weather_condition_codes_table
     repeat: expr
-    repeat-expr: weather_condition_codes_entry_number
+    repeat-expr: weather_condition_codes_pointer.entry_count
   uv_index_table:
-    pos: uv_index_table_offset
+    pos: uv_index_pointer.offset
     type: uv_index_table
     repeat: expr
-    repeat-expr: uv_index_entry_number
+    repeat-expr: uv_index_pointer.entry_count
   laundry_index_table:
-    pos: laundry_index_table_offset
+    pos: laundry_index_pointer.offset
     type: laundry_index_table
     repeat: expr
-    repeat-expr: laundry_index_entry_number
+    repeat-expr: laundry_index_pointer.entry_count
   pollen_count_table:
-    pos: pollen_count_table_offset
+    pos: pollen_count_pointer.offset
     type: pollen_count_table
     repeat: expr
-    repeat-expr: pollen_count_entry_number
+    repeat-expr: pollen_count_pointer.entry_count
   location_table:
-    pos: location_table_offset
+    pos: location_pointer.offset
     type: location_table
     repeat: expr
-    repeat-expr: location_entry_number
+    repeat-expr: location_pointer.entry_count
 types:
-  long_forecast_table:
+  location_key:
+    doc: |
+      A city's ID. Three numbers that together pick one city. Every table entry
+      that belongs to a city starts with these same four bytes.
     seq:
       - id: country_code
         type: u1
@@ -203,40 +167,37 @@ types:
         type: u1
       - id: location_code
         type: u2
+  table_pointer:
+    doc: Says where a table is in the file and how many entries it has.
+    seq:
+      - id: entry_count
+        type: u4
+        doc: Number of entries. 0 means the table is empty.
+      - id: offset
+        type: u4
+        doc: Where the first entry starts, counted in bytes from the start of the file.
+  long_forecast_table:
+    doc: |
+      One city's full forecast (0x80 bytes): today, tomorrow, then seven more days.
+      Used for cities in the console's own country.
+    seq:
+      - id: key
+        type: location_key
+        doc: Which city this is.
       - id: local_timestamp
         type: u4
-        doc: |
-          Minutes since 2000, in the city's local time: the forecast's issue time.
-          The banner prints it as "As of ..." / "%d日 %d時発表", and uses its day of
-          month as the date of the today block.
+        doc: When the forecast was issued, in the city's local time (minutes since 2000).
       - id: global_timestamp
         type: u4
-        doc: |
-          The same instant in UTC. local_timestamp - global_timestamp is the
-          city's UTC offset in minutes. Both readers compute the city's clock as
-          `utc_now + (local_timestamp - global_timestamp)`: the channel in
-          FUN_8002054C (0x80020558), the banner at rso+0x2A70.
+        doc: The same moment in UTC (minutes since 2000).
       - id: timezone_tag
         type: u1
         doc: |
-          Validated as `<= 5, or exactly 0xFF` (0x8000cb00), one byte via `lbz` -
-          NOT the u32 generators often declare here. Never read anywhere else, so
-          it has no visible effect on the displayed forecast. The Wii Menu banner
-          (banner.rso), the one other retail reader of this file, does not read it
-          either. Of the channel's fourteen `lbz ..., 12(rN)` loads, two are these
-          validators and two read the day block's low Celsius byte; the rest are
-          UI objects.
-
-          Nintendo's retail values: 1 for most cities, 5 for a few (Evansville,
-          Gary, Bowling Green, El Paso), 4 for others (Brasília, Nuuk, Palikir),
-          0xFF (sentinel) throughout on Japanese files. Best guess is a timezone
-          marker - Nuuk shares Denmark's country code but its own zone
-          ([ForecastChannel#5](https://github.com/WiiLink24/ForecastChannel/issues/5)).
-
-          Same field, same rule, at short_forecast_table's +0x0C.
+          Must be 0 to 5, or 0xFF. Nothing uses it. Nintendo's files have 1 for
+          most cities, 4 or 5 for a few, and 0xFF in Japan.
       - id: timezone_tag_reserved
         size: 3
-        doc: Unread padding after `timezone_tag`; a u32 write here misses the byte actually checked.
+        doc: Padding. Never read.
       - id: today
         type: day_block
       - id: tomorrow
@@ -246,251 +207,247 @@ types:
         repeat: expr
         repeat-expr: 7
         doc: |
-          The seven-day outlook, starting the day after tomorrow. Days 6 and 7 are
-          only used for the Japanese version of this Channel.
+          The next seven days, starting the day after tomorrow. Only the first
+          five are shown outside Japan; days 6 and 7 are Japan only.
+    instances:
+      utc_offset_minutes:
+        value: local_timestamp - global_timestamp
+        doc: How far the city's clock is from UTC, in minutes (-300 means UTC-5).
   short_forecast_table:
+    doc: |
+      One city's short forecast (0x48 bytes): today and tomorrow only. Used for
+      cities in other countries.
     seq:
-      - id: country_code
-        type: u1
-        enum: country_code
-      - id: region_code
-        type: u1
-      - id: location_code
-        type: u2
+      - id: key
+        type: location_key
+        doc: Which city this is.
       - id: local_timestamp
         type: u4
-        doc: Timestamp is minutes since 2000.
+        doc: When the forecast was issued, in the city's local time (minutes since 2000).
       - id: global_timestamp
         type: u4
-        doc: Timestamp is minutes since 2000.
+        doc: The same moment in UTC (minutes since 2000).
       - id: timezone_tag
         type: u1
-        doc: |
-          Same field and rule as `long_forecast_table`'s `timezone_tag`:
-          validated at 0x8000cbe8 as `<= 5, or exactly 0xFF`, one byte, read
-          nowhere else.
+        doc: Same as in long_forecast_table. Nothing uses it.
       - id: timezone_tag_reserved
         size: 3
+        doc: Padding. Never read.
       - id: today
         type: day_block
         doc: |
-          Unlike the long table, the `uv_index`, `laundry_index` and `pollen_count`
-          bytes of the two blocks in this entry are validated (see `day_block`) but
-          never displayed.
+          In this table the UV, laundry and pollen bytes are checked but never
+          shown. WiiLink fills today's with 0xFF (unused).
       - id: tomorrow
         type: day_block
+    instances:
+      utc_offset_minutes:
+        value: local_timestamp - global_timestamp
+        doc: How far the city's clock is from UTC, in minutes (-300 means UTC-5).
   day_block:
     doc: |
-      One day of forecast, 0x1C bytes. Used twice in every `long_forecast_table`
-      and `short_forecast_table` entry: first for today, then for tomorrow.
-      Nintendo's own name for the table that holds them is WeatherForecasts
-      (long) / WeatherSummary (short).
+      One day of forecast (0x1C bytes). Every long and short entry has two:
+      today, then tomorrow.
     seq:
       - id: forecast
         type: u2
-        doc: Weather code. Looked up in `weather_condition_codes_table`.
+        doc: Weather code for the whole day. 0xFFFF means unused.
       - id: six_hour_forecast
         type: u2
         repeat: expr
         repeat-expr: 4
         doc: |
-          Weather codes for 12am-6am, 6am-12pm, 12pm-6pm and 6pm-12am, in that order.
+          Weather codes for 12am-6am, 6am-12pm, 12pm-6pm and 6pm-12am, in that
+          order. 0xFFFF means unused.
       - id: high_celsius
         type: s1
+        doc: Highest temperature in Celsius. -128 means unused.
       - id: high_celsius_difference
         type: s1
-        doc: |
-          Only used for the Japanese version of this Channel. Change from the
-          previous day's high, by the banner's pane name `kion_zen` (前日比). The
-          Japanese tile shows it signed in place of the low (rso+0x0940).
+        doc: Japan only. How much the high changed since yesterday.
       - id: low_celsius
         type: s1
+        doc: Lowest temperature in Celsius. -128 means unused.
       - id: low_celsius_difference
         type: s1
-        doc: Only used for the Japanese version of this Channel.
+        doc: Japan only. How much the low changed since yesterday.
       - id: high_fahrenheit
         type: s1
+        doc: Highest temperature in Fahrenheit. -128 means unused.
       - id: high_fahrenheit_difference
         type: s1
-        doc: Only used for the Japanese version of this Channel.
+        doc: Japan only. How much the high changed since yesterday.
       - id: low_fahrenheit
         type: s1
+        doc: Lowest temperature in Fahrenheit. -128 means unused.
       - id: low_fahrenheit_difference
         type: s1
-        doc: Only used for the Japanese version of this Channel.
+        doc: Japan only. How much the low changed since yesterday.
       - id: six_hour_precipitation
         type: u1
         repeat: expr
         repeat-expr: 4
         doc: |
-          Only used for the Japanese version of this Channel. Chance of
-          precipitation for 12am-6am, 6am-12pm, 12pm-6pm and 6pm-12am, in that order.
+          Japan only. Chance of rain or snow (0-100 %) for 12am-6am, 6am-12pm,
+          12pm-6pm and 6pm-12am, in that order. 0xFF means unused.
       - id: wind_direction
         type: u1
         enum: wind_direction
+        doc: Which way the wind blows. `calm` is no wind, `unused` hides the wind row.
       - id: wind_speed_kilometers_per_hour
         type: u1
+        doc: Wind speed in km/h.
       - id: wind_speed_miles_per_hour
         type: u1
+        doc: Wind speed in mph.
       - id: uv_index
         type: u1
+        enum: index_code
         doc: |
-          Validated by `FUN_8000d1ec` (0x8000d1ec), once per block: must be `0xFF` or
-          exist in `uv_index_table`.
-          Long entries: today's value is shown; tomorrow's is unused.
-          Short entries: never displayed - international summary cities get no UV
-          row - so it is validated but otherwise unused.
-          (In short entries the tomorrow fields were once misnamed `today_*`; they
-          sit right after the tomorrow block's wind bytes.)
+          UV level, a code from uv_index_table. 0xFF (`unused`) means none.
+          Only today's value is shown, and not for short entries.
       - id: laundry_index
         type: u1
-        doc: |
-          Only used for the Japanese version of this Channel. Checked against
-          `laundry_index_table` only when the console region is Japan. Unused for
-          tomorrow, and in the short-entry display path.
+        enum: index_code
+        doc: Japan only. Laundry level, a code from laundry_index_table. 0xFF means none.
       - id: pollen_count
         type: u1
-        doc: |
-          Only used for the Japanese version of this Channel. Checked against
-          `pollen_count_table` only when the console region is Japan. Unused for
-          tomorrow, and in the short-entry display path.
+        enum: index_code
+        doc: Japan only. Pollen level, a code from pollen_count_table. 0xFF means none.
+    instances:
+      forecast_is_unused:
+        value: (forecast & 0x7fff) == 999 or (forecast & 0x7fff) == 0x7fff
+        doc: True when `forecast` is the "no weather" marker.
   week_day:
-    doc: One day of the seven-day outlook, 8 bytes. Seven of these end every long entry.
+    doc: One day of the seven-day outlook (8 bytes). Every long entry ends with seven.
     seq:
       - id: forecast
         type: u2
-        doc: Weather code. Looked up in `weather_condition_codes_table`.
+        doc: Weather code. 0xFFFF means unused.
       - id: high_celsius
         type: s1
+        doc: Highest temperature in Celsius. -128 means unused.
       - id: low_celsius
         type: s1
+        doc: Lowest temperature in Celsius. -128 means unused.
       - id: high_fahrenheit
         type: s1
+        doc: Highest temperature in Fahrenheit. -128 means unused.
       - id: low_fahrenheit
         type: s1
+        doc: Lowest temperature in Fahrenheit. -128 means unused.
       - id: precipitation
         type: u1
-        doc: Only used for the Japanese version of this Channel.
+        doc: Japan only. Chance of rain or snow, 0-100 %. 0xFF means unused.
       - id: padding
         type: u1
-        doc: Never validated, never read anywhere in the binary. Genuine padding.
+        doc: Padding. Never read.
+    instances:
+      forecast_is_unused:
+        value: (forecast & 0x7fff) == 999 or (forecast & 0x7fff) == 0x7fff
+        doc: True when `forecast` is the "no weather" marker.
   weather_condition_codes_table:
+    doc: |
+      Turns a weather code into an icon and a name. WiiLink writes two entries
+      per condition: an international one and a Japanese one.
     seq:
       - id: weather_icon_code_1
         type: u2
         doc: |
-          Lookup key. Every forecast code in the other tables, and short.bin's
-          current_forecast, is matched against this field. Must be unique.
-          A code whose low 15 bits are 999 or 0x7FFF means "no weather".
+          The code the other tables use for this weather. Must be unique.
+          0xFFFF, 0x7FFF and 999 all mean "no weather".
       - id: weather_icon_code_2
         type: u2
         doc: |
-          Icon ID, in the low 15 bits: 1-33 are the Japanese icon set, 101-126 the
-          international one (banner mark_tab, 59 entries, rso+0x3060). Bit 15 is a
-          night flag: the banner draws W_sun_00 as W_moon_00 (strcmp at
-          rso+0x152C). WiiLink's night conditions set it (Clear = 0x8065).
+          Which icon to draw. The low 15 bits are the icon number (1-33 Japanese
+          icons, 101-126 international). The top bit means "night version".
       - id: weather_text_offset
         type: u4
-        doc: |
-          UTF-16BE condition name, the banner's `telop` caption. Must be non-zero
-          (FUN_80028A50), < filesize and even. The banner gives up after 96
-          characters.
+        doc: Where the weather's name starts (UTF-16BE text, e.g. "Sunny"). Can't be 0.
     instances:
       icon_id:
         value: weather_icon_code_2 & 0x7fff
+        doc: The icon number, without the night bit.
       is_night:
         value: (weather_icon_code_2 & 0x8000) != 0
+        doc: True if the night version of the icon is used.
   uv_index_table:
+    doc: Turns a UV code into text.
     seq:
       - id: uv_index_code
         type: u1
+        doc: The code used by uv_index in day_block. Must be unique.
       - id: padding
         type: u1
         repeat: expr
         repeat-expr: 3
-        doc: |
-          Confirmed unread: the entry-dedup loop in `FUN_8000c734` (0x8000c734) only
-          compares `uv_index_code` and range/parity-checks `uv_index_text_offset`;
-          these 3 bytes are never touched. Alignment before the u4 offset.
+        doc: Padding. Never read.
       - id: uv_index_text_offset
         type: u4
+        doc: Where the text starts (UTF-16BE).
   laundry_index_table:
+    doc: Turns a laundry code into text. Only checked on Japanese consoles.
     seq:
       - id: laundry_index_code
         type: u1
+        doc: The code used by laundry_index in day_block. Must be unique.
       - id: padding
         type: u1
         repeat: expr
         repeat-expr: 3
-        doc: Confirmed unread by the same validator loop as `uv_index_table`'s equivalent field; alignment only.
+        doc: Padding. Never read.
       - id: laundry_index_text_offset
         type: u4
+        doc: Where the text starts (UTF-16BE).
   pollen_count_table:
+    doc: Turns a pollen code into text. Only checked on Japanese consoles.
     seq:
       - id: pollen_count_code
         type: u1
+        doc: The code used by pollen_count in day_block. Must be unique.
       - id: padding
         type: u1
         repeat: expr
         repeat-expr: 3
-        doc: Confirmed unread by the same validator loop as `uv_index_table`'s equivalent field; alignment only.
+        doc: Padding. Never read.
       - id: pollen_count_text_offset
         type: u4
+        doc: Where the text starts (UTF-16BE).
   location_table:
+    doc: |
+      One city on the globe (0x18 bytes). Every city here must be used by some
+      forecast entry, or the channel rejects the file.
     seq:
-      - id: country_code
-        type: u1
-        enum: country_code
-      - id: region_code
-        type: u1
-      - id: location_code
-        type: u2
+      - id: key
+        type: location_key
+        doc: The city's ID.
       - id: city_text_offset
         type: u4
-        doc: Must be < filesize and even; used as-is, so point it at a real string.
+        doc: Where the city name starts (UTF-16BE). Can't be 0.
       - id: region_text_offset
         type: u4
-        doc: 0 means none (FUN_80027D3C stores it only when non-zero). Otherwise < filesize and even.
+        doc: Where the region name starts (UTF-16BE). 0 means unused.
       - id: country_text_offset
         type: u4
-        doc: 0 means none, as for region_text_offset.
+        doc: Where the country name starts (UTF-16BE). 0 means unused.
       - id: latitude_coordinates
         type: u2
+        doc: Where the city sits on the globe.
       - id: longitude_coordinates
         type: u2
+        doc: Where the city sits on the globe.
       - id: location_zoom_1
         type: u1
         doc: |
-          Marker prominence rank, 0 (least prominent) to 9. Validated as <= 9 at
-          0x8000CFFC; a larger value rejects the whole file.
-
-          This is the only one of the two zoom fields the channel consumes. The
-          globe scene buckets every city by this value into an array of ten
-          linked-list heads at scene+0x3C..+0x60 (0x8001A4C8: `lbz r0, 0x280(r4)`
-          then `slwi r0, r0, 2`, indexing scene+0x3C). The currently selected
-          city bypasses the buckets entirely and goes in its own slot at
-          scene+0x64, immediately after the ten.
-
-          Direction: HIGHER is more prominent. The visibility predicate at
-          0x8001AE10 compares two cities' ranks and returns "visible" only when
-          the candidate's rank is the greater one; and the selected city is
-          forced to 9, the maximum, at 0x800076FC. A rank of 9 therefore means
-          "always shown", 0 means "shown last".
+          How important the city is on the globe, 0 to 9. Higher means shown first
+          and from further away. 9 is always shown.
       - id: location_zoom_2
         type: u1
-        doc: |
-          Validated as <= 3 at 0x8000D00C - a different and much smaller range
-          than location_zoom_1, which is the reliable way to tell the two apart.
-
-          No consumer for this field was found anywhere in the retail binary;
-          only the bounds check reads it. WiiLink's generator pins it to 3, its
-          maximum, for all 4,272 cities it emits.
+        doc: 0 to 3. Checked but nothing uses it. WiiLink always writes 3.
       - id: padding
         type: u2
-        doc: |
-          Confirmed unread: the location-table validator in `FUN_8000c734`
-          (0x8000c734) stops at `location_zoom_2` (byte offset 0x15 of the entry);
-          this trailing u2 is never loaded. Pure alignment to the 0x18-byte stride.
+        doc: Padding. Never read.
+
 enums:
   country_code:
     1: japan
@@ -626,7 +583,7 @@ enums:
     5: italian
     6: dutch
   wind_direction:
-    0: none
+    0: calm
     1: nne
     2: ne
     3: ene
@@ -643,6 +600,9 @@ enums:
     14: nw
     15: nnw
     16: n
+    255: unused
+  index_code:
+    255: unused
   region_flag:
     0: japan
     1: fahrenheit

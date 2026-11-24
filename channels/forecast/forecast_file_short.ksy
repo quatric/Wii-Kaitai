@@ -1,90 +1,94 @@
 meta:
   id: forecast_file_short
+  title: Forecast Channel - short.bin
+  file-extension: bin
   application: Forecast Channel
   endian: be
 doc: |
-  short.bin - the current-conditions file (Nintendo: WeatherNow).
-  Header is 0x24 bytes; current_forecast_table entries are 0x18 bytes.
+  short.bin: the weather RIGHT NOW for every city (Nintendo calls it WeatherNow).
 
-  It has two retail readers, and both use exactly the same four entry fields:
-  local_timestamp, current_forecast, current_temperature_celsius and
-  current_temperature_fahrenheit.
-    * The channel itself shows the current condition and temperature in the city
-      view (FUN_800079A4, 0x80007D60-0x80007E04; FUN_8002322C; FUN_8000A764
-      index 2). Earlier notes said the channel only validates this file; that
-      was wrong.
-    * The channel's Wii Menu banner (00000005.app -> arc/banner.rso,
-      setup_ww_layout at rso+0x0FB0) draws the same data on the Wii Menu tile
-      outside Japan. There is no weather globe in the Wii Menu; the globe is
-      the channel's own.
+  A header, then one small entry per city with a weather code and a temperature.
+  The forecast for the coming days is a different file: see forecast_file.ksy.
 
-  Storage: "4.bin" inside data/wc24dl.vff, LZ10-compressed (download ID 4,
-  hard-coded at 0x800327D4; polled every 30 minutes). The banner decompresses
-  into a 0x5000-byte buffer, so a decompressed short.bin over 20 KiB breaks the
-  Wii Menu tile.
+  Good to know:
+    * Times are minutes since 1 January 2000 (UTC). The `*_unix` fields convert them.
+    * The file is stored LZ10-compressed. Everything here describes the
+      decompressed file.
+    * This file has no weather-name table. Its weather codes are looked up in
+      forecast.bin, so the two files must be made as a pair.
+    * If forecast.bin carries a service message, this file isn't read at all.
 
-  Not validated at all when forecast.bin's message_offset is non-zero.
+  "UNUSED" MARKERS. When a field has nothing to say, it is filled with an
+  all-ones value instead of 0. Check for it before using the field:
 
-  This file carries NO weather-condition table of its own. Its current_forecast codes
-  are validated against the condition table inside the matching forecast.bin - the
-  console reads the count from forecast.bin+0x30 while walking short.bin's entries
-  (0x8000D130 in the USA v7 binary) - so the two files must be generated as a pair.
+    Field                            Means "unused" when it is
+    -------------------------------  --------------------------
+    current_forecast                 0xFFFF
+    unknown (in the entry)           0xFF
+    current_temperature_celsius      -128  (shown as `--`)
+    current_temperature_fahrenheit   -128  (shown as `--`)
+    current_wind_direction           0xFF  (`unused` in the enum)
 
-  current_wind_direction is validated as <= 16 or 0xFF (0x8000D190).
+  Deep technical notes (addresses, validation rules): https://gist.github.com/quatric/23267cf80416303da28ef186551a88df
 seq:
   - id: version
     type: u4
-    doc: Always 0. Top 16 bits non-zero is validator status -3 (0x8000D030), as for forecast.bin.
+    doc: Always 0. Anything else and the channel gives up on the file.
   - id: filesize
     type: u4
-    doc: Must equal the decompressed size.
+    doc: Size of the whole file, after decompressing.
   - id: crc32
     type: u4
-    doc: zlib CRC-32 over 0x0C..EOF (0x8000D05C).
+    doc: CRC-32 checksum of everything after this field.
   - id: opening_timestamp
     type: u4
-    doc: Timestamp is minutes since 2000 (UTC). No reader found.
+    doc: When the file was made (minutes since 2000, UTC). The channel doesn't use it.
   - id: closing_timestamp
     type: u4
     doc: |
-      Timestamp is minutes since 2000 (UTC). Expiry: past it, the validator
-      returns -2 (0x8000D088) and the channel re-downloads. The banner also
-      refuses the file once it passes, outside Japan (rso+0x29A4). WiiLink writes
-      opening + 63, which tolerates two missed 30-minute polls.
+      When the file expires (minutes since 2000, UTC). After this the channel
+      downloads a new one. WiiLink sets it to opening + 63.
   - id: country_code
     type: u1
     enum: country_code
+    doc: The country this file is for.
   - id: unknown_1
     type: u1
     repeat: expr
     repeat-expr: 3
+    doc: Padding. Never read.
   - id: language_code
     type: u1
     enum: language_code
-    doc: Must equal the console language byte (0x8000D090); also checked by the banner (rso+0x29C0).
+    doc: Language of the file. Must match the console's language.
   - id: unknown_2
     type: u1
-    doc: |
-      Same position as forecast.bin's region_flag; WiiLink calls it
-      TemperatureFlag and writes 0. Unlike forecast.bin's, it is neither
-      validated nor read.
+    doc: Same spot as region_flag in forecast.bin, but nothing checks or uses it here.
   - id: unknown_3
     type: u1
-    doc: Same position as forecast.bin's unknown_2. Neither validated nor read.
+    doc: Nothing checks or uses it.
   - id: padding
     type: u1
-  - id: current_forecast_entry_number
-    type: u4
-  - id: current_forecast_table_offset
-    type: u4
+  - id: current_forecast_pointer
+    type: table_pointer
+    doc: The current_forecast_table.
 instances:
+  opening_unix:
+    value: (opening_timestamp + 15778080) * 60
+    doc: The time the file was made as a normal Unix time (seconds since 1970).
+  closing_unix:
+    value: (closing_timestamp + 15778080) * 60
+    doc: The time the file expires as a normal Unix time (seconds since 1970).
   current_forecast_table:
-    pos: current_forecast_table_offset
+    pos: current_forecast_pointer.offset
     type: current_forecast_table
     repeat: expr
-    repeat-expr: current_forecast_entry_number
+    repeat-expr: current_forecast_pointer.entry_count
 types:
-  current_forecast_table:
+  location_key:
+    doc: |
+      A city's ID. Three numbers that together pick one city. Every table entry
+      that belongs to a city starts with these same four bytes.
     seq:
       - id: country_code
         type: u1
@@ -93,58 +97,67 @@ types:
         type: u1
       - id: location_code
         type: u2
+  table_pointer:
+    doc: Says where a table is in the file and how many entries it has.
+    seq:
+      - id: entry_count
+        type: u4
+        doc: Number of entries. 0 means the table is empty.
+      - id: offset
+        type: u4
+        doc: Where the first entry starts, counted in bytes from the start of the file.
+  current_forecast_table:
+    doc: One city's current weather (0x18 bytes).
+    seq:
+      - id: key
+        type: location_key
+        doc: Which city this is.
       - id: local_timestamp
         type: u4
-        doc: |
-          Minutes since 2000, in the city's local time. Was misnamed
-          `opening_timestamp`; WiiLink's struct names it LocalTimestamp. Shown as
-          the "As of ..." time on the Wii Menu tile (rso+0x13A0) and read by the
-          channel (FUN_8002322C).
+        doc: When this was measured, in the city's local time (minutes since 2000). Shown as "As of ..." on the Wii Menu.
       - id: global_timestamp
         type: u4
-        doc: |
-          The same instant in UTC (WiiLink: GlobalTimestamp). Was misnamed
-          `closing_timestamp`. No reader found in either binary.
+        doc: The same moment in UTC (minutes since 2000). Nothing uses it.
       - id: current_forecast
         type: u2
         doc: |
-          0xFFFF, or a weather_icon_code_1 present in forecast.bin's condition table
-          (validated at 0x8000D124). Read by both readers.
+          Weather code, looked up in forecast.bin's weather_condition_codes_table.
+          0xFFFF means unused.
       - id: unknown
         type: u1
         doc: |
-          NOT padding: validated by the channel as <= 99 or 0xFF (0x8000D178). The
-          bound is 99, not 100 like precipitation.
-
-          Read by nothing. The earlier note that its consumer is the Wii System
-          Menu is wrong. Both retail readers of this file, the channel and its Wii
-          Menu banner, read only +0x04, +0x0C, +0x0F and +0x10. An instruction-level
-          scan of the channel's game code for byte loads at displacement 0x0E finds
-          only this validator plus day-block and UI reads. Any in-range value is safe.
+          0 to 99, or 0xFF for unused. Checked but nothing uses it. (It is not
+          padding, and not the same as precipitation, which goes up to 100.)
       - id: current_temperature_celsius
         type: s1
-        doc: |
-          -128 (0x80) shows `--` in the channel (`cmpwi r3, -128` at 0x80007DBC);
-          the banner shows `--` for anything below -99.
+        doc: Temperature in Celsius. -128 means unused (the channel shows `--`).
       - id: current_temperature_fahrenheit
         type: s1
-        doc: Same sentinel as current_temperature_celsius.
+        doc: Temperature in Fahrenheit. -128 means unused (the channel shows `--`).
       - id: current_wind_direction
         type: u1
         enum: wind_direction
-        doc: Validated as <= 16 or 0xFF (0x8000D190). Displayed by neither reader.
+        doc: Which way the wind blows. `calm` is no wind, `unused` means no data. Never shown.
       - id: current_wind_speed_kilometers_per_hour
         type: u1
-        doc: Displayed by neither reader.
+        doc: Wind speed in km/h. Never shown.
       - id: current_wind_speed_miles_per_hour
         type: u1
-        doc: Displayed by neither reader.
+        doc: Wind speed in mph. Never shown.
       - id: unknown_1
         type: u2
-        doc: Never validated, never read.
+        doc: Never checked, never read.
       - id: unknown_2
         type: u2
-        doc: Never validated, never read. WiiLink writes 0xFFFF.
+        doc: Never checked, never read. WiiLink writes 0xFFFF (unused).
+    instances:
+      utc_offset_minutes:
+        value: local_timestamp - global_timestamp
+        doc: How far the city's clock is from UTC, in minutes (-300 means UTC-5).
+      current_forecast_is_unused:
+        value: current_forecast == 0xffff
+        doc: True when `current_forecast` is the "no data" marker.
+
 enums:
   country_code:
     1: japan
@@ -281,7 +294,7 @@ enums:
     5: italian
     6: dutch
   wind_direction:
-    0: none
+    0: calm
     1: nne
     2: ne
     3: ene
@@ -298,3 +311,4 @@ enums:
     14: nw
     15: nnw
     16: n
+    255: unused
