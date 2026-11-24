@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- eabnk, ealoc, eamus, eashpg, eatext, eqimgset, ertmvox, ertm_resource, faafz, fbnd, fcmpftex
 - capcomtex, capcomtres, ccfpk, chnktree, cmps, conan_str, cs12, dbttex, dcf, dctdict, dkapbig, dpgz, dspbnk, dspstr, ea_gfn, eaaems, eabank
 - acbivt, ads_midway, afbfsb, agsc, apkf, apx, asurasfx, avdbl, batman_fmsb, bmsgtext, bobmp3, btftex, btxdlg, bwav, caf, capcaps
 - pikmin_bx, pikmin_key, pikmin_pcr, glacier_gms, glacier_loc, glacier_prm, glacier_prp, glacier_whd, mh2_anim, mh2_col, mh2_grf, mh2_inst, mh2_wrld
