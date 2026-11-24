@@ -5,9 +5,8 @@ meta:
   endian: le
 doc: |
   Header chunks 0x80000001 info, 0x80000003 context, 0x80000004 data,
-  0x80000005 multistream (after vgmstream opus.c). Packets in the data chunk
-  are each prefixed by a big-endian u32 size and a u32 final range value. The
-  NUS3AUDIO variant wraps this in a big-endian "OPUS" header.
+  0x80000005 multistream (after vgmstream opus.c). The data chunk holds
+  packets each prefixed by a big-endian u32 size and a u32 final range value.
 seq:
   - id: chunks
     type: chunk
@@ -21,9 +20,15 @@ types:
         type: u4
       - id: body
         size: size
-    instances:
-      is_data:
-        value: tag == 0x80000004
+        type:
+          switch-on: tag
+          cases:
+            0x80000004: packets
+  packets:
+    seq:
+      - id: packets
+        type: packet
+        repeat: eos
   packet:
     seq:
       - id: size

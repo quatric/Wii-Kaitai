@@ -705,6 +705,7 @@ what each was checked against.
 ## Sync log (nintoolbox formats since 2026-10-08)
 
 <!-- sync-log -->
+- stp, serz_tokens, sumo_display_list; deeper upk, unityassets, spxogg, swfres, switch_opus, simsvault
 - idd, fezc, hudson_pdt, kylotonn, kylotonn_chunks, nftr, gaftx, mosdata
 - unityassets, spxogg, swfres, switch_opus, serz_geo, sumo_cog
 - ubi_loc, sonic_xtb, ubi_ban, serz_tg, zsnd, wis, sygnus, upk, ubibao, simsvault, strtbl, stptext, vddbstr, ubisb

@@ -1,17 +1,16 @@
 meta:
   id: spxogg
-  title: Ogg Speex (.spx) pages and header
+  title: Ogg Speex (.spx)
   file-extension: spx
   endian: le
 doc: |
-  Ogg pages re-assemble into packets: packet 0 is the 80-byte "Speex   "
-  header, packet 1 the comment header, the rest Speex frame groups.
+  Ogg pages; packets are re-assembled from the lacing segments. Packet 0 is
+  the 80-byte "Speex   " header (`speex_header`), packet 1 the comment header,
+  the rest Speex frame groups.
 seq:
   - id: pages
     type: page
-    repeat: expr
-    repeat-expr: 1
-    doc: First page only (body length is the segment table sum).
+    repeat: eos
 types:
   page:
     seq:
@@ -35,9 +34,17 @@ types:
         type: u1
         repeat: expr
         repeat-expr: segment_count
-        doc: |
-          The body that follows is sum(segment_table) bytes; Kaitai cannot sum
-          this inline, so the body is left to the next page's parse by the caller.
+      - id: segments
+        type: segment(segment_table[_index])
+        repeat: expr
+        repeat-expr: segment_count
+  segment:
+    params:
+      - id: len
+        type: u1
+    seq:
+      - id: data
+        size: len
   speex_header:
     seq:
       - id: magic

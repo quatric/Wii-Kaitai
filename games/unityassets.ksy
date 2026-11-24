@@ -94,3 +94,50 @@ types:
         pos: _root.data_offset + byte_start
         size: byte_size
         io: _root._io
+  texture2d:
+    doc: Class 28; the LZ11 stream holds the first mip level plus the chain.
+    seq:
+      - id: name_len
+        type: u4
+      - id: name
+        size: name_len
+        type: str
+        encoding: ASCII
+      - id: name_pad
+        size: (-name_len) % 4
+      - id: zero
+        type: u4
+      - id: one
+        type: u4
+      - id: two
+        type: u4
+      - id: width
+        type: u4
+      - id: height
+        type: u4
+      - id: image_size
+        type: u4
+      - id: format_shifted
+        type: u4
+        doc: format << 16; 0x10 IA8, 0x11 RGB565, 0x12 RGB5A3, 0x13 RGBA8, 0x14 CMPR.
+      - id: data_size
+        type: u4
+      - id: lz_size
+        type: u4
+      - id: lz11
+        size: lz_size
+  text_asset:
+    doc: Class 49.
+    seq:
+      - id: name_len
+        type: u4
+      - id: name
+        size: name_len
+        type: str
+        encoding: ASCII
+      - id: name_pad
+        size: (-name_len) % 4
+      - id: length
+        type: u4
+      - id: data
+        size: length
